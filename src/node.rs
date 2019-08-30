@@ -11,8 +11,6 @@ pub struct ErrInfo {
     msg: Vec<String>,
 }
 
-fn id<T>(x: T) { x }
-
 pub trait ExprNode {
     fn label(&self) -> &String;
     fn value(&self) -> std::result::Result<f32, String>;
@@ -171,12 +169,58 @@ impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Div<Expr<U>> for Ex
     }
 }
 
+struct FoldProxy<T> {
+    value: T,
+    items: Vec<Box<dyn ExprNode>>,
+}
+
+impl<T: Clone + Debug> FoldProxy<T> {
+    fn into_expr(self) -> Expr<T> {
+        Expr {
+            label: "product".to_string(),
+            value: self.value.clone(),
+            previous: self.items,
+        }
+    }
+}
+
+impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Mul<Expr<U>> for FoldProxy<T>
+    where T: Mul<U>,
+          <T as Mul<U>>::Output: Clone + Debug {
+    type Output = FoldProxy<<T as Mul<U>>::Output>;
+
+    fn mul(self, other: Expr<U>) -> FoldProxy<<T as Mul<U>>::Output> {
+        let mut ret = FoldProxy {
+            value: self.value.clone() * other.value.clone(),
+            items: self.items,
+        };
+        ret.items.push(Box::new(other));
+        ret
+    }
+}
+
+#[macro_export]
+macro_rules! product {
+    ($head:expr, $($tail:expr),+) => {
+        product_impl!( FoldProxy { value: ($head).quantity().clone(), items: vec![Box::new($head)] }, $($tail), *).into_expr()
+    };
+}
+
+#[macro_export]
+macro_rules! product_impl {
+    ($last:expr) => { ($last) };
+    ($first:expr, $second:expr) => { ($first + $second) };
+    ($first:expr, $second:expr, $($tail:expr),+) => { ($first * $second) * product_impl!($($tail),*) };
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::node::{LeafBuilder, ExprNode};
+    #[macro_use]
+    use crate::node::{LeafBuilder, ExprNode, FoldProxy};
     use uom::si::f32::*;
-    use uom::si::length::{millimeter};
+    use uom::si::length::{millimeter, meter};
     use uom::si::area::square_millimeter;
+    use uom::si::volume::cubic_meter;
     #[test]
     fn it_works() {
         let x = LeafBuilder::new().name("x").value(Length::new::<millimeter>(2.0)).build();
@@ -191,6 +235,12 @@ mod tests {
         assert_eq!(res.symbol(), Ok("m^2".to_string()));
         assert_eq!(res.quantity(), &Area::new::<square_millimeter>(8.0));
 
+        let x = LeafBuilder::new().name("x").value(Length::new::<meter>(2.0)).build();
+        let y = LeafBuilder::new().name("y").value(Length::new::<meter>(4.0)).build();
+        let z = LeafBuilder::new().name("z").value(Length::new::<meter>(8.0)).build();
+
+        let res = product!(x,y,z);
+        assert_eq!(res.quantity(), &Volume::new::<cubic_meter>(64.0));
         for node in res.previous {
             println!("{:?}", node.value());
         }
