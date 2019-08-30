@@ -1,9 +1,10 @@
 extern crate uom;
-use std::vec::Vec;
-use std::ops::{Add, Sub, Mul, Div};
-use std::boxed::Box;
+
 use regex::Regex;
+use std::boxed::Box;
 use std::fmt::Debug;
+use std::ops::{Add, Div, Mul, Sub};
+use std::vec::Vec;
 
 #[derive(Debug)]
 pub struct ErrInfo {
@@ -29,26 +30,23 @@ impl<T: Clone + Debug> ExprNode for Expr<T> {
     }
     fn value(&self) -> std::result::Result<f32, String> {
         let re = Regex::new(r#"^(.*?) .*$"#).unwrap();
-        let format = format!("{:?}", self.quantity()).as_str().to_owned();
+        let format = format!("{:?}", self.quantity()).to_owned();
         re.captures_iter(format.clone().as_str())
             .last()
-            .map_or(
-                Err(format.clone()),
-                |x|x.get(1).map_or(
-                    Err(format.clone()),
-                    |x|x.as_str().parse::<f32>().map_err(|_| format)
-                )
-            )
+            .map_or(Err(format.clone()), |x| {
+                x.get(1).map_or(Err(format.clone()), |x| {
+                    x.as_str().parse::<f32>().map_err(|_| format)
+                })
+            })
     }
     fn symbol(&self) -> std::result::Result<String, String> {
         let re = Regex::new(r#".*? (.*)"#).unwrap();
-        let format = format!("{:?}", self.quantity()).as_str().to_owned();
+        let format = format!("{:?}", self.quantity()).to_owned();
         re.captures_iter(format.clone().as_str())
             .last()
-            .map_or(
-                Err(format.clone()),
-                |x| x.get(1).map(|x|x.as_str().to_string()).ok_or(format)
-        )
+            .map_or(Err(format.clone()), |x| {
+                x.get(1).map(|x| x.as_str().to_string()).ok_or(format)
+            })
     }
 }
 
@@ -104,67 +102,63 @@ impl<NameType, ValueType> LeafBuilder<NameType, ValueType> {
 }
 
 impl<T: 'static + Clone + Debug> Add for Expr<T>
-    where T: Add<Output=T> + Clone {
+where
+    T: Add<Output = T> + Clone,
+{
     type Output = Expr<T>;
 
     fn add(self, other: Expr<T>) -> Expr<T> {
         Expr {
             label: "(+)".to_string(),
             value: self.quantity().clone() + other.quantity().clone(),
-            previous: vec![
-                Box::new(self),
-                Box::new(other),
-            ],
+            previous: vec![Box::new(self), Box::new(other)],
         }
     }
 }
 
 impl<T: 'static + Clone + Debug> Sub for Expr<T>
-    where T: Sub<Output=T> + Clone {
+where
+    T: Sub<Output = T> + Clone,
+{
     type Output = Expr<T>;
 
     fn sub(self, other: Expr<T>) -> Expr<T> {
         Expr {
             label: "(-)".to_string(),
             value: self.quantity().clone() - other.quantity().clone(),
-            previous: vec![
-                Box::new(self),
-                Box::new(other),
-            ],
+            previous: vec![Box::new(self), Box::new(other)],
         }
     }
 }
 
 impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Mul<Expr<U>> for Expr<T>
-    where T: Mul<U>,
-          <T as Mul<U>>::Output: Clone + Debug {
+where
+    T: Mul<U>,
+    <T as Mul<U>>::Output: Clone + Debug,
+{
     type Output = Expr<<T as Mul<U>>::Output>;
 
     fn mul(self, other: Expr<U>) -> Expr<<T as Mul<U>>::Output> {
         Expr {
             label: "(*)".to_string(),
             value: self.quantity().clone() * other.quantity().clone(),
-            previous: vec![
-                Box::new(self),
-                Box::new(other),
-            ],
+            previous: vec![Box::new(self), Box::new(other)],
         }
     }
 }
 
 impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Div<Expr<U>> for Expr<T>
-    where T: Div<U>,
-          <T as Div<U>>::Output: Clone + Debug {
+where
+    T: Div<U>,
+    <T as Div<U>>::Output: Clone + Debug,
+{
     type Output = Expr<<T as Div<U>>::Output>;
 
     fn div(self, other: Expr<U>) -> Expr<<T as Div<U>>::Output> {
         Expr {
             label: "(*)".to_string(),
             value: self.quantity().clone() / other.quantity().clone(),
-            previous: vec![
-                Box::new(self),
-                Box::new(other),
-            ],
+            previous: vec![Box::new(self), Box::new(other)],
         }
     }
 }
@@ -185,8 +179,10 @@ impl<T: Clone + Debug> FoldProxy<T> {
 }
 
 impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Mul<Expr<U>> for FoldProxy<T>
-    where T: Mul<U>,
-          <T as Mul<U>>::Output: Clone + Debug {
+where
+    T: Mul<U>,
+    <T as Mul<U>>::Output: Clone + Debug,
+{
     type Output = FoldProxy<<T as Mul<U>>::Output>;
 
     fn mul(self, other: Expr<U>) -> FoldProxy<<T as Mul<U>>::Output> {
@@ -217,29 +213,51 @@ macro_rules! product_impl {
 mod tests {
     #[macro_use]
     use crate::node::{LeafBuilder, ExprNode, FoldProxy};
-    use uom::si::f32::*;
-    use uom::si::length::{millimeter, meter};
     use uom::si::area::square_millimeter;
+    use uom::si::f32::*;
+    use uom::si::length::{meter, millimeter};
     use uom::si::volume::cubic_meter;
+
     #[test]
     fn it_works() {
-        let x = LeafBuilder::new().name("x").value(Length::new::<millimeter>(2.0)).build();
-        let y = LeafBuilder::new().name("y").value(Length::new::<millimeter>(2.0)).build();
+        let x = LeafBuilder::new()
+            .name("x")
+            .value(Length::new::<millimeter>(2.0))
+            .build();
+        let y = LeafBuilder::new()
+            .name("y")
+            .value(Length::new::<millimeter>(2.0))
+            .build();
         assert_eq!(x.quantity(), &Length::new::<millimeter>(2.0));
         assert_eq!(y.quantity(), &Length::new::<millimeter>(2.0));
         assert_eq!(x.symbol(), Ok("m^1".to_string()));
-        assert_eq!((x+y).quantity().value, 0.004);
-        let x = LeafBuilder::new().name("x").value(Length::new::<millimeter>(2.0)).build();
-        let y = LeafBuilder::new().name("y").value(Length::new::<millimeter>(4.0)).build();
+        assert_eq!((x + y).quantity().value, 0.004);
+        let x = LeafBuilder::new()
+            .name("x")
+            .value(Length::new::<millimeter>(2.0))
+            .build();
+        let y = LeafBuilder::new()
+            .name("y")
+            .value(Length::new::<millimeter>(4.0))
+            .build();
         let res = x * y;
         assert_eq!(res.symbol(), Ok("m^2".to_string()));
         assert_eq!(res.quantity(), &Area::new::<square_millimeter>(8.0));
 
-        let x = LeafBuilder::new().name("x").value(Length::new::<meter>(2.0)).build();
-        let y = LeafBuilder::new().name("y").value(Length::new::<meter>(4.0)).build();
-        let z = LeafBuilder::new().name("z").value(Length::new::<meter>(8.0)).build();
+        let x = LeafBuilder::new()
+            .name("x")
+            .value(Length::new::<meter>(2.0))
+            .build();
+        let y = LeafBuilder::new()
+            .name("y")
+            .value(Length::new::<meter>(4.0))
+            .build();
+        let z = LeafBuilder::new()
+            .name("z")
+            .value(Length::new::<meter>(8.0))
+            .build();
 
-        let res = product!(x,y,z);
+        let res = product!(x, y, z);
         assert_eq!(res.quantity(), &Volume::new::<cubic_meter>(64.0));
         for node in res.previous {
             println!("{:?}", node.value());
