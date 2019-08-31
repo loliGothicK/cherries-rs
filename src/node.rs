@@ -3,6 +3,7 @@ extern crate uom;
 use regex::Regex;
 use std::boxed::Box;
 use std::fmt::Debug;
+use std::marker::PhantomData;
 use std::ops::{Add, Div, Mul, Sub};
 use std::vec::Vec;
 
@@ -13,7 +14,7 @@ pub struct ErrInfo {
 }
 
 pub trait ExprNode {
-    fn label(&self) -> &String;
+    fn name(&self) -> &String;
     fn value(&self) -> std::result::Result<f32, String>;
     fn symbol(&self) -> std::result::Result<String, String>;
 }
@@ -25,8 +26,8 @@ pub struct Expr<T: Clone + Debug> {
 }
 
 impl<T: Clone + Debug> ExprNode for Expr<T> {
-    fn label(&self) -> &String {
-        self.label()
+    fn name(&self) -> &String {
+        self.name()
     }
     fn value(&self) -> std::result::Result<f32, String> {
         let re = Regex::new(r#"^(.*?) .*$"#).unwrap();
@@ -56,27 +57,34 @@ impl<T: Clone + Debug> Expr<T> {
     pub fn quantity(&self) -> &T {
         &self.value
     }
-    pub fn label(&self) -> &String {
+    pub fn name(&self) -> &String {
         &self.label
+    }
+    fn label<S: Into<String>>(self, name: S) -> Expr<T> {
+        Expr {
+            label: name.into(),
+            value: self.value,
+            previous: self.previous,
+        }
     }
 }
 
 #[derive(Debug, Default)]
-pub struct LeafBuilder<NameType, ValueType> {
+pub struct Leaf<NameType, ValueType> {
     label: NameType,
     value: ValueType,
 }
 
-impl LeafBuilder<(), ()> {
+impl Leaf<(), ()> {
     pub fn new() -> Self {
-        LeafBuilder {
+        Leaf {
             label: (),
             value: (),
         }
     }
 }
 
-impl<T: Clone + Debug> LeafBuilder<String, T> {
+impl<T: Clone + Debug> Leaf<String, T> {
     pub fn build(self) -> Expr<T> {
         Expr {
             label: self.label,
@@ -86,28 +94,29 @@ impl<T: Clone + Debug> LeafBuilder<String, T> {
     }
 }
 
-impl<NameType, ValueType> LeafBuilder<NameType, ValueType> {
-    pub fn name<S: Into<String>>(self, name: S) -> LeafBuilder<String, ValueType> {
-        LeafBuilder {
+impl<NameType, ValueType> Leaf<NameType, ValueType> {
+    pub fn name<S: Into<String>>(self, name: S) -> Leaf<String, ValueType> {
+        Leaf {
             label: name.into(),
             value: self.value,
         }
     }
-    pub fn value<T: Clone + Debug>(self, val: T) -> LeafBuilder<NameType, T> {
-        LeafBuilder {
+    pub fn value<T: Clone + Debug>(self, val: T) -> Leaf<NameType, T> {
+        Leaf {
             label: self.label,
             value: val,
         }
     }
 }
 
-impl<T: 'static + Clone + Debug> Add for Expr<T>
+impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Add<Expr<U>> for Expr<T>
 where
-    T: Add<Output = T> + Clone,
+    T: Add<U>,
+    <T as Add<U>>::Output: Clone + Debug,
 {
-    type Output = Expr<T>;
+    type Output = Expr<<T as Add<U>>::Output>;
 
-    fn add(self, other: Expr<T>) -> Expr<T> {
+    fn add(self, other: Expr<U>) -> Expr<<T as Add<U>>::Output> {
         Expr {
             label: "(+)".to_string(),
             value: self.quantity().clone() + other.quantity().clone(),
@@ -116,13 +125,14 @@ where
     }
 }
 
-impl<T: 'static + Clone + Debug> Sub for Expr<T>
+impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Sub<Expr<U>> for Expr<T>
 where
-    T: Sub<Output = T> + Clone,
+    T: Sub<U>,
+    <T as Sub<U>>::Output: Clone + Debug,
 {
-    type Output = Expr<T>;
+    type Output = Expr<<T as Sub<U>>::Output>;
 
-    fn sub(self, other: Expr<T>) -> Expr<T> {
+    fn sub(self, other: Expr<U>) -> Expr<<T as Sub<U>>::Output> {
         Expr {
             label: "(-)".to_string(),
             value: self.quantity().clone() - other.quantity().clone(),
@@ -212,7 +222,7 @@ macro_rules! product_impl {
 #[cfg(test)]
 mod tests {
     #[macro_use]
-    use crate::node::{LeafBuilder, ExprNode, FoldProxy};
+    use crate::node::{Leaf, ExprNode, FoldProxy};
     use uom::si::area::square_millimeter;
     use uom::si::f32::*;
     use uom::si::length::{meter, millimeter};
@@ -220,23 +230,23 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let x = LeafBuilder::new()
+        let x = Leaf::new()
             .name("x")
             .value(Length::new::<millimeter>(2.0))
             .build();
-        let y = LeafBuilder::new()
+        let y = Leaf::new()
             .name("y")
-            .value(Length::new::<millimeter>(2.0))
+            .value(Length::new::<millimeter>(1.0) * 2.0)
             .build();
         assert_eq!(x.quantity(), &Length::new::<millimeter>(2.0));
         assert_eq!(y.quantity(), &Length::new::<millimeter>(2.0));
         assert_eq!(x.symbol(), Ok("m^1".to_string()));
         assert_eq!((x + y).quantity().value, 0.004);
-        let x = LeafBuilder::new()
+        let x = Leaf::new()
             .name("x")
             .value(Length::new::<millimeter>(2.0))
             .build();
-        let y = LeafBuilder::new()
+        let y = Leaf::new()
             .name("y")
             .value(Length::new::<millimeter>(4.0))
             .build();
@@ -244,15 +254,15 @@ mod tests {
         assert_eq!(res.symbol(), Ok("m^2".to_string()));
         assert_eq!(res.quantity(), &Area::new::<square_millimeter>(8.0));
 
-        let x = LeafBuilder::new()
+        let x = Leaf::new()
             .name("x")
             .value(Length::new::<meter>(2.0))
             .build();
-        let y = LeafBuilder::new()
+        let y = Leaf::new()
             .name("y")
             .value(Length::new::<meter>(4.0))
             .build();
-        let z = LeafBuilder::new()
+        let z = Leaf::new()
             .name("z")
             .value(Length::new::<meter>(8.0))
             .build();
