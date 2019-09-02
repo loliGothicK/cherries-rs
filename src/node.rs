@@ -98,6 +98,13 @@ impl<T: Clone + Debug> Cherry<T> {
             previous: self.previous,
         }
     }
+    pub fn map<F: FnOnce(&T) -> U, U: Clone + Debug>(&self, f: F) -> Cherry<U> {
+        Node::new()
+            .name("(map)")
+            .value(f(self.quantity()).to_owned())
+            .prev(self.to_json().to_owned())
+            .build()
+    }
 }
 
 #[derive(Debug, Default)]

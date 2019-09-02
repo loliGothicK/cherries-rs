@@ -15,7 +15,7 @@ mod tests {
     use uom::si::volume::cubic_meter;
 
     #[test]
-    fn it_works() {
+    fn basic_tests() {
         let x = Leaf::new()
             .name("x")
             .value(uom::si::f32::Length::new::<millimeter>(2.0))
@@ -56,6 +56,17 @@ mod tests {
         let res = prod_all!(x, y, z).label("xyz");
         assert_eq!(&Volume::new::<cubic_meter>(64.0), res.quantity());
         assert_eq!(res.name(), &"xyz".to_string());
+        println!("{}", res.to_json());
+    }
+    #[test]
+    fn map_tests() {
+        let x = Leaf::new()
+            .name("x")
+            .value(Length::new::<meter>(2.1))
+            .build();
+        let res = x.map(|x| x.floor::<meter>()).label("floor");
+        assert_eq!(&Length::new::<meter>(2.0), res.quantity());
+        assert_eq!(&"floor".to_string(), res.name());
         println!("{}", res.to_json());
     }
 }
