@@ -89,8 +89,8 @@ mod tests {
             .build();
         let res = x * y;
         let validated = res
-            .validate("greater than 1.0!!", |quantity| quantity < &Area::new::<square_meter>(1.0))
+            .validate("must be less than 1.0!!", |quantity| quantity < &Area::new::<square_meter>(1.0))
             .collect();
-        assert_eq!(Err(Error { label: "(mul)".to_string(), msg: vec!["greater than 1.0!!".to_string()] }), validated);
+        assert_eq!(Err(Error { label: "(mul)".to_string(), msg: vec!["must be less than 1.0!!".to_string()] }), validated);
     }
 }

@@ -19,7 +19,7 @@ impl PartialEq for Error {
 pub trait Cherries {
     fn name(&self) -> &String;
     fn value(&self) -> std::result::Result<f32, String>;
-    fn symbol(&self) -> std::result::Result<String, String>;
+    fn symbol(&self) -> String;
     fn to_json(&self) -> String;
 }
 
@@ -43,22 +43,27 @@ impl<T: Clone + Debug> Cherries for Cherry<T> {
     fn value(&self) -> std::result::Result<f32, String> {
         let re = Regex::new(r#"^(.*?) .*$"#).unwrap();
         let format = format!("{:?}", self.quantity()).to_owned();
-        re.captures_iter(format.clone().as_str())
-            .last()
-            .map_or(Err(format.clone()), |x| {
-                x.get(1).map_or(Err(format.clone()), |x| {
-                    x.as_str().parse::<f32>().map_err(|_| format)
-                })
-            })
+        match format.parse::<f32>() {
+            Ok(value) => Ok(value),
+            Err(_) => {
+                re.captures_iter(format.clone().as_str())
+                  .last()
+                  .map_or(Err(format.clone()), |x| {
+                      x.get(1).map_or(Err(format.clone()), |x| {
+                          x.as_str().parse::<f32>().map_err(|_| format)
+                      })
+                  })
+            }
+        }
     }
-    fn symbol(&self) -> std::result::Result<String, String> {
+    fn symbol(&self) -> String {
         let re = Regex::new(r#".*? (.*)"#).unwrap();
         let format = format!("{:?}", self.quantity()).to_owned();
         re.captures_iter(format.clone().as_str())
             .last()
-            .map_or(Err(format.clone()), |x| {
-                x.get(1).map(|x| x.as_str().to_string()).ok_or(format)
-            })
+            .map(|x| {
+                x.get(1).map(|x| x.as_str().to_string()).unwrap_or("dimensionless".to_string())
+            }).unwrap_or("dimensionless".to_string())
     }
     fn to_json(&self) -> String {
         match &self.previous {
@@ -66,7 +71,7 @@ impl<T: Clone + Debug> Cherries for Cherry<T> {
                 format!(
                     "{{\"label\": \"{label}\", \"value\": {value}, \"unit\": \"{unit}\", \"subexpr\": [{subexpr}]}}",
                     label = self.label,
-                    unit = self.symbol().unwrap(),
+                    unit = self.symbol(),
                     value = self.value().unwrap(),
                     subexpr = prev)
             },
@@ -74,7 +79,7 @@ impl<T: Clone + Debug> Cherries for Cherry<T> {
                 format!(
                     "{{\"label\": \"{label}\", \"value\": {value}, \"unit\": \"{unit}\"}}",
                     label = self.label,
-                    unit = self.symbol().unwrap(),
+                    unit = self.symbol(),
                     value = self.value().unwrap()
                 )
             }
