@@ -1,6 +1,6 @@
 use super::node::{Cherries, Cherry, Node};
-use std::ops::{Add, Div, Mul, Sub};
 use std::fmt::Debug;
+use std::ops::{Add, Div, Mul, Sub};
 
 impl<T, U> Add<Cherry<U>> for Cherry<T>
 where
