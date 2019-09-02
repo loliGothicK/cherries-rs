@@ -109,9 +109,10 @@ impl<NameType, ValueType> Leaf<NameType, ValueType> {
     }
 }
 
-impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Add<Expr<U>> for Expr<T>
+impl<T, U> Add<Expr<U>> for Expr<T>
 where
-    T: Add<U>,
+    T: 'static + Clone + Debug + Add<U>,
+    U: 'static + Clone + Debug,
     <T as Add<U>>::Output: Clone + Debug,
 {
     type Output = Expr<<T as Add<U>>::Output>;
@@ -188,10 +189,27 @@ impl<T: Clone + Debug> FoldProxy<T> {
     }
 }
 
+impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Add<Expr<U>> for FoldProxy<T>
+    where
+        T: Add<U>,
+        <T as Add<U>>::Output: Clone + Debug,
+{
+    type Output = FoldProxy<<T as Add<U>>::Output>;
+
+    fn add(self, other: Expr<U>) -> FoldProxy<<T as Add<U>>::Output> {
+        let mut ret = FoldProxy {
+            value: self.value.clone() + other.value.clone(),
+            items: self.items,
+        };
+        ret.items.push(Box::new(other));
+        ret
+    }
+}
+
 impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Mul<Expr<U>> for FoldProxy<T>
-where
-    T: Mul<U>,
-    <T as Mul<U>>::Output: Clone + Debug,
+    where
+        T: Mul<U>,
+        <T as Mul<U>>::Output: Clone + Debug,
 {
     type Output = FoldProxy<<T as Mul<U>>::Output>;
 
@@ -217,6 +235,20 @@ macro_rules! product_impl {
     ($last:expr) => { ($last) };
     ($first:expr, $second:expr) => { ($first + $second) };
     ($first:expr, $second:expr, $($tail:expr),+) => { ($first * $second) * product_impl!($($tail),*) };
+}
+
+#[macro_export]
+macro_rules! sum {
+    ($head:expr, $($tail:expr),+) => {
+        sum_impl!( FoldProxy { value: ($head).quantity().clone(), items: vec![Box::new($head)] }, $($tail), *).into_expr()
+    };
+}
+
+#[macro_export]
+macro_rules! sum_impl {
+    ($last:expr) => { ($last) };
+    ($first:expr, $second:expr) => { ($first + $second) };
+    ($first:expr, $second:expr, $($tail:expr),+) => { ($first * $second) + product_impl!($($tail),*) };
 }
 
 #[cfg(test)]
@@ -267,8 +299,9 @@ mod tests {
             .value(Length::new::<meter>(8.0))
             .build();
 
-        let res = product!(x, y, z);
+        let res = product!(x, y, z).label("xyz");
         assert_eq!(res.quantity(), &Volume::new::<cubic_meter>(64.0));
+        assert_eq!(res.name(), &"xyz".to_string());
         for node in res.previous {
             println!("{:?}", node.value());
         }
