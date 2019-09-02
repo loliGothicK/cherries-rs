@@ -5,9 +5,9 @@ use std::fmt::Debug;
 use std::vec::Vec;
 
 #[derive(Debug)]
-pub struct ErrInfo {
-    label: String,
-    msg: Vec<String>,
+pub struct Error {
+    pub label: String,
+    pub msg: Vec<String>,
 }
 
 pub trait Cherries {
@@ -70,7 +70,7 @@ impl<T: Clone + Debug> Cherries for Cherry<T> {
     }
 }
 
-pub type Result<T> = std::result::Result<Cherry<T>, ErrInfo>;
+pub type Result<T> = std::result::Result<Cherry<T>, Error>;
 
 impl<T: Clone + Debug> Cherry<T> {
     pub fn quantity(&self) -> &T {

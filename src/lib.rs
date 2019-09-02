@@ -4,6 +4,7 @@ pub mod node;
 pub mod ops;
 #[macro_use]
 pub mod fold;
+pub mod validate;
 
 #[cfg(test)]
 mod tests {
