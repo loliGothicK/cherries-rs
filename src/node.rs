@@ -1,10 +1,7 @@
 extern crate uom;
 
 use regex::Regex;
-use std::boxed::Box;
 use std::fmt::Debug;
-use std::marker::PhantomData;
-use std::ops::{Add, Div, Mul, Sub};
 use std::vec::Vec;
 
 #[derive(Debug)]
@@ -13,19 +10,21 @@ pub struct ErrInfo {
     msg: Vec<String>,
 }
 
-pub trait ExprNode {
+pub trait Cherries {
     fn name(&self) -> &String;
     fn value(&self) -> std::result::Result<f32, String>;
     fn symbol(&self) -> std::result::Result<String, String>;
+    fn to_json(&self) -> String;
 }
 
-pub struct Expr<T: Clone + Debug> {
+#[derive(Clone, Debug)]
+pub struct Cherry<T: Clone + Debug> {
     label: String,
     value: T,
-    previous: Vec<Box<dyn ExprNode>>,
+    previous: Option<String>,
 }
 
-impl<T: Clone + Debug> ExprNode for Expr<T> {
+impl<T: Clone + Debug> Cherries for Cherry<T> {
     fn name(&self) -> &String {
         self.name()
     }
@@ -49,19 +48,39 @@ impl<T: Clone + Debug> ExprNode for Expr<T> {
                 x.get(1).map(|x| x.as_str().to_string()).ok_or(format)
             })
     }
+    fn to_json(&self) -> String {
+        match &self.previous {
+            Some(prev) => {
+                format!(
+                    "{{\"label\": \"{label}\", \"value\": {value}, \"unit\": \"{unit}\", \"subexpr\": [{subexpr}]}}",
+                    label = self.label,
+                    unit = self.symbol().unwrap(),
+                    value = self.value().unwrap(),
+                    subexpr = prev)
+            },
+            None => {
+                format!(
+                    "{{\"label\": \"{label}\", \"value\": {value}, \"unit\": \"{unit}\"}}",
+                    label = self.label,
+                    unit = self.symbol().unwrap(),
+                    value = self.value().unwrap()
+                )
+            }
+        }
+    }
 }
 
-pub type Result<T> = std::result::Result<Expr<T>, ErrInfo>;
+pub type Result<T> = std::result::Result<Cherry<T>, ErrInfo>;
 
-impl<T: Clone + Debug> Expr<T> {
+impl<T: Clone + Debug> Cherry<T> {
     pub fn quantity(&self) -> &T {
         &self.value
     }
     pub fn name(&self) -> &String {
         &self.label
     }
-    fn label<S: Into<String>>(self, name: S) -> Expr<T> {
-        Expr {
+    pub fn label<S: Into<String>>(self, name: S) -> Cherry<T> {
+        Cherry {
             label: name.into(),
             value: self.value,
             previous: self.previous,
@@ -85,11 +104,11 @@ impl Leaf<(), ()> {
 }
 
 impl<T: Clone + Debug> Leaf<String, T> {
-    pub fn build(self) -> Expr<T> {
-        Expr {
+    pub fn build(self) -> Cherry<T> {
+        Cherry {
             label: self.label,
             value: self.value,
-            previous: vec![],
+            previous: None,
         }
     }
 }
@@ -109,201 +128,53 @@ impl<NameType, ValueType> Leaf<NameType, ValueType> {
     }
 }
 
-impl<T, U> Add<Expr<U>> for Expr<T>
-where
-    T: 'static + Clone + Debug + Add<U>,
-    U: 'static + Clone + Debug,
-    <T as Add<U>>::Output: Clone + Debug,
-{
-    type Output = Expr<<T as Add<U>>::Output>;
+#[derive(Debug, Default)]
+pub struct Node<NameType, ValueType, PrevType> {
+    label: NameType,
+    value: ValueType,
+    previous: PrevType,
+}
 
-    fn add(self, other: Expr<U>) -> Expr<<T as Add<U>>::Output> {
-        Expr {
-            label: "(+)".to_string(),
-            value: self.quantity().clone() + other.quantity().clone(),
-            previous: vec![Box::new(self), Box::new(other)],
+impl Node<(), (), ()> {
+    pub fn new() -> Self {
+        Node {
+            label: (),
+            value: (),
+            previous: (),
         }
     }
 }
 
-impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Sub<Expr<U>> for Expr<T>
-where
-    T: Sub<U>,
-    <T as Sub<U>>::Output: Clone + Debug,
-{
-    type Output = Expr<<T as Sub<U>>::Output>;
-
-    fn sub(self, other: Expr<U>) -> Expr<<T as Sub<U>>::Output> {
-        Expr {
-            label: "(-)".to_string(),
-            value: self.quantity().clone() - other.quantity().clone(),
-            previous: vec![Box::new(self), Box::new(other)],
+impl<T: Clone + Debug> Node<String, T, String> {
+    pub fn build(self) -> Cherry<T> {
+        Cherry {
+            label: self.label,
+            value: self.value,
+            previous: Some(self.previous),
         }
     }
 }
 
-impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Mul<Expr<U>> for Expr<T>
-where
-    T: Mul<U>,
-    <T as Mul<U>>::Output: Clone + Debug,
-{
-    type Output = Expr<<T as Mul<U>>::Output>;
-
-    fn mul(self, other: Expr<U>) -> Expr<<T as Mul<U>>::Output> {
-        Expr {
-            label: "(*)".to_string(),
-            value: self.quantity().clone() * other.quantity().clone(),
-            previous: vec![Box::new(self), Box::new(other)],
+impl<NameType, ValueType, PrevType> Node<NameType, ValueType, PrevType> {
+    pub fn name<S: Into<String>>(self, name: S) -> Node<String, ValueType, PrevType> {
+        Node {
+            label: name.into(),
+            value: self.value,
+            previous: self.previous,
         }
     }
-}
-
-impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Div<Expr<U>> for Expr<T>
-where
-    T: Div<U>,
-    <T as Div<U>>::Output: Clone + Debug,
-{
-    type Output = Expr<<T as Div<U>>::Output>;
-
-    fn div(self, other: Expr<U>) -> Expr<<T as Div<U>>::Output> {
-        Expr {
-            label: "(*)".to_string(),
-            value: self.quantity().clone() / other.quantity().clone(),
-            previous: vec![Box::new(self), Box::new(other)],
+    pub fn value<T: Clone + Debug>(self, val: T) -> Node<NameType, T, PrevType> {
+        Node {
+            label: self.label,
+            value: val,
+            previous: self.previous,
         }
     }
-}
-
-struct FoldProxy<T> {
-    value: T,
-    items: Vec<Box<dyn ExprNode>>,
-}
-
-impl<T: Clone + Debug> FoldProxy<T> {
-    fn into_expr(self) -> Expr<T> {
-        Expr {
-            label: "product".to_string(),
-            value: self.value.clone(),
-            previous: self.items,
-        }
-    }
-}
-
-impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Add<Expr<U>> for FoldProxy<T>
-    where
-        T: Add<U>,
-        <T as Add<U>>::Output: Clone + Debug,
-{
-    type Output = FoldProxy<<T as Add<U>>::Output>;
-
-    fn add(self, other: Expr<U>) -> FoldProxy<<T as Add<U>>::Output> {
-        let mut ret = FoldProxy {
-            value: self.value.clone() + other.value.clone(),
-            items: self.items,
-        };
-        ret.items.push(Box::new(other));
-        ret
-    }
-}
-
-impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Mul<Expr<U>> for FoldProxy<T>
-    where
-        T: Mul<U>,
-        <T as Mul<U>>::Output: Clone + Debug,
-{
-    type Output = FoldProxy<<T as Mul<U>>::Output>;
-
-    fn mul(self, other: Expr<U>) -> FoldProxy<<T as Mul<U>>::Output> {
-        let mut ret = FoldProxy {
-            value: self.value.clone() * other.value.clone(),
-            items: self.items,
-        };
-        ret.items.push(Box::new(other));
-        ret
-    }
-}
-
-#[macro_export]
-macro_rules! product {
-    ($head:expr, $($tail:expr),+) => {
-        product_impl!( FoldProxy { value: ($head).quantity().clone(), items: vec![Box::new($head)] }, $($tail), *).into_expr()
-    };
-}
-
-#[macro_export]
-macro_rules! product_impl {
-    ($last:expr) => { ($last) };
-    ($first:expr, $second:expr) => { ($first + $second) };
-    ($first:expr, $second:expr, $($tail:expr),+) => { ($first * $second) * product_impl!($($tail),*) };
-}
-
-#[macro_export]
-macro_rules! sum {
-    ($head:expr, $($tail:expr),+) => {
-        sum_impl!( FoldProxy { value: ($head).quantity().clone(), items: vec![Box::new($head)] }, $($tail), *).into_expr()
-    };
-}
-
-#[macro_export]
-macro_rules! sum_impl {
-    ($last:expr) => { ($last) };
-    ($first:expr, $second:expr) => { ($first + $second) };
-    ($first:expr, $second:expr, $($tail:expr),+) => { ($first * $second) + product_impl!($($tail),*) };
-}
-
-#[cfg(test)]
-mod tests {
-    #[macro_use]
-    use crate::node::{Leaf, ExprNode, FoldProxy};
-    use uom::si::area::square_millimeter;
-    use uom::si::f32::*;
-    use uom::si::length::{meter, millimeter};
-    use uom::si::volume::cubic_meter;
-
-    #[test]
-    fn it_works() {
-        let x = Leaf::new()
-            .name("x")
-            .value(Length::new::<millimeter>(2.0))
-            .build();
-        let y = Leaf::new()
-            .name("y")
-            .value(Length::new::<millimeter>(1.0) * 2.0)
-            .build();
-        assert_eq!(x.quantity(), &Length::new::<millimeter>(2.0));
-        assert_eq!(y.quantity(), &Length::new::<millimeter>(2.0));
-        assert_eq!(x.symbol(), Ok("m^1".to_string()));
-        assert_eq!((x + y).quantity().value, 0.004);
-        let x = Leaf::new()
-            .name("x")
-            .value(Length::new::<millimeter>(2.0))
-            .build();
-        let y = Leaf::new()
-            .name("y")
-            .value(Length::new::<millimeter>(4.0))
-            .build();
-        let res = x * y;
-        assert_eq!(res.symbol(), Ok("m^2".to_string()));
-        assert_eq!(res.quantity(), &Area::new::<square_millimeter>(8.0));
-
-        let x = Leaf::new()
-            .name("x")
-            .value(Length::new::<meter>(2.0))
-            .build();
-        let y = Leaf::new()
-            .name("y")
-            .value(Length::new::<meter>(4.0))
-            .build();
-        let z = Leaf::new()
-            .name("z")
-            .value(Length::new::<meter>(8.0))
-            .build();
-
-        let res = product!(x, y, z).label("xyz");
-        assert_eq!(res.quantity(), &Volume::new::<cubic_meter>(64.0));
-        assert_eq!(res.name(), &"xyz".to_string());
-        for node in res.previous {
-            println!("{:?}", node.value());
+    pub fn prev<S: Into<String>>(self, prev: S) -> Node<NameType, ValueType, String> {
+        Node {
+            label: self.label,
+            value: self.value,
+            previous: prev.into(),
         }
     }
 }
