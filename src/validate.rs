@@ -22,52 +22,60 @@ impl<T: Clone + Debug> ValidateProxy<T> {
 }
 
 pub trait Validate<T: Clone + Debug> {
-    fn validate<Predicate: FnOnce(&T) -> std::result::Result<(), String>>(
+    fn validate<IntoString, Predicate>(
         self,
+        msg: IntoString,
         predicate: Predicate,
-    ) -> ValidateProxy<T>;
+    ) -> ValidateProxy<T>
+    where IntoString: Into<String>, Predicate: FnOnce(&T) -> bool;
 }
 
 impl<T: Clone + Debug> Validate<T> for Cherry<T> {
-    fn validate<Predicate: FnOnce(&T) -> std::result::Result<(), String>>(
+    fn validate<IntoString, Predicate>(
         self,
+        msg: IntoString,
         predicate: Predicate,
-    ) -> ValidateProxy<T> {
-        match predicate(&self.quantity()) {
-            Ok(()) => ValidateProxy {
+    ) -> ValidateProxy<T>
+        where IntoString: Into<String>, Predicate: FnOnce(&T) -> bool {
+        if predicate(&self.quantity()) {
+            ValidateProxy {
                 cherry: self.to_owned(),
                 errors: RefCell::new(vec![]),
-            },
-            Err(msg) => ValidateProxy {
+            }
+        }
+        else {
+            ValidateProxy {
                 cherry: self.to_owned(),
-                errors: RefCell::new(vec![msg.to_owned()]),
-            },
+                errors: RefCell::new(vec![msg.into()]),
+            }
         }
     }
 }
 
 impl<T: Clone + Debug> Validate<T> for ValidateProxy<T> {
-    fn validate<Predicate: FnOnce(&T) -> std::result::Result<(), String>>(
+    fn validate<IntoString, Predicate>(
         self,
+        msg: IntoString,
         predicate: Predicate,
-    ) -> ValidateProxy<T> {
-        match predicate(self.cherry.quantity()) {
-            Ok(()) => self,
-            Err(msg) => {
-                self.errors.borrow_mut().push(msg.to_owned());
-                self
-            }
+    ) -> ValidateProxy<T>
+        where IntoString: Into<String>, Predicate: FnOnce(&T) -> bool {
+        if predicate(&self.cherry.quantity()) {
+            self
+        }
+        else {
+            self.errors.borrow_mut().push(msg.into());
+            self
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::node::{Cherries, Cherry, Leaf};
+    use crate::node::{Leaf, Error};
     use crate::validate::Validate;
     use uom::si::area::square_meter;
     use uom::si::f32::*;
-    use uom::si::length::{meter, millimeter};
+    use uom::si::length::{meter};
 
     #[test]
     fn it_works() {
@@ -81,14 +89,8 @@ mod tests {
             .build();
         let res = x * y;
         let validated = res
-            .validate(|quantity| {
-                if quantity < &Area::new::<square_meter>(1.0) {
-                    Ok(())
-                } else {
-                    Err("greater than 1.0!!".to_string())
-                }
-            })
+            .validate("greater than 1.0!!", |quantity| quantity < &Area::new::<square_meter>(1.0))
             .collect();
-        println!("{:?}", validated);
+        assert_eq!(Err(Error { label: "(mul)".to_string(), msg: vec!["greater than 1.0!!".to_string()] }), validated);
     }
 }

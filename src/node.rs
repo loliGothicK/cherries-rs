@@ -10,6 +10,12 @@ pub struct Error {
     pub msg: Vec<String>,
 }
 
+impl PartialEq for Error {
+    fn eq(&self, other: &Self) -> bool {
+        (self.label == other.label) && (self.msg == other.msg)
+    }
+}
+
 pub trait Cherries {
     fn name(&self) -> &String;
     fn value(&self) -> std::result::Result<f32, String>;
@@ -22,6 +28,12 @@ pub struct Cherry<T: Clone + Debug> {
     label: String,
     value: T,
     previous: Option<String>,
+}
+
+impl<T: Clone + Debug + PartialEq> PartialEq for Cherry<T> {
+    fn eq(&self, other: &Self) -> bool {
+        (self.label == other.label) && (self.value == other.value) && (self.previous == other.previous)
+    }
 }
 
 impl<T: Clone + Debug> Cherries for Cherry<T> {
