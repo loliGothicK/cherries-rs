@@ -32,7 +32,9 @@ pub struct Cherry<T: Clone + Debug> {
 
 impl<T: Clone + Debug + PartialEq> PartialEq for Cherry<T> {
     fn eq(&self, other: &Self) -> bool {
-        (self.label == other.label) && (self.value == other.value) && (self.previous == other.previous)
+        (self.label == other.label)
+            && (self.value == other.value)
+            && (self.previous == other.previous)
     }
 }
 
@@ -47,12 +49,12 @@ impl<T: Clone + Debug> Cherries for Cherry<T> {
             Ok(value) => Ok(value),
             Err(_) => {
                 re.captures_iter(format.clone().as_str())
-                  .last()
-                  .map_or(Err(format.clone()), |x| {
-                      x.get(1).map_or(Err(format.clone()), |x| {
-                          x.as_str().parse::<f32>().map_err(|_| format)
-                      })
-                  })
+                    .last()
+                    .map_or(Err(format.clone()), |x| {
+                        x.get(1).map_or(Err(format.clone()), |x| {
+                            x.as_str().parse::<f32>().map_err(|_| format)
+                        })
+                    })
             }
         }
     }
@@ -62,8 +64,11 @@ impl<T: Clone + Debug> Cherries for Cherry<T> {
         re.captures_iter(format.clone().as_str())
             .last()
             .map(|x| {
-                x.get(1).map(|x| x.as_str().to_string()).unwrap_or("dimensionless".to_string())
-            }).unwrap_or("dimensionless".to_string())
+                x.get(1)
+                    .map(|x| x.as_str().to_string())
+                    .unwrap_or("dimensionless".to_string())
+            })
+            .unwrap_or("dimensionless".to_string())
     }
     fn to_json(&self) -> String {
         match &self.previous {

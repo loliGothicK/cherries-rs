@@ -27,7 +27,9 @@ pub trait Validate<T: Clone + Debug> {
         msg: IntoString,
         predicate: Predicate,
     ) -> ValidateProxy<T>
-    where IntoString: Into<String>, Predicate: FnOnce(&T) -> bool;
+    where
+        IntoString: Into<String>,
+        Predicate: FnOnce(&T) -> bool;
 }
 
 impl<T: Clone + Debug> Validate<T> for Cherry<T> {
@@ -36,14 +38,16 @@ impl<T: Clone + Debug> Validate<T> for Cherry<T> {
         msg: IntoString,
         predicate: Predicate,
     ) -> ValidateProxy<T>
-        where IntoString: Into<String>, Predicate: FnOnce(&T) -> bool {
+    where
+        IntoString: Into<String>,
+        Predicate: FnOnce(&T) -> bool,
+    {
         if predicate(&self.quantity()) {
             ValidateProxy {
                 cherry: self.to_owned(),
                 errors: RefCell::new(vec![]),
             }
-        }
-        else {
+        } else {
             ValidateProxy {
                 cherry: self.to_owned(),
                 errors: RefCell::new(vec![msg.into()]),
@@ -58,11 +62,13 @@ impl<T: Clone + Debug> Validate<T> for ValidateProxy<T> {
         msg: IntoString,
         predicate: Predicate,
     ) -> ValidateProxy<T>
-        where IntoString: Into<String>, Predicate: FnOnce(&T) -> bool {
+    where
+        IntoString: Into<String>,
+        Predicate: FnOnce(&T) -> bool,
+    {
         if predicate(&self.cherry.quantity()) {
             self
-        }
-        else {
+        } else {
             self.errors.borrow_mut().push(msg.into());
             self
         }
@@ -71,11 +77,11 @@ impl<T: Clone + Debug> Validate<T> for ValidateProxy<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::node::{Leaf, Error};
+    use crate::node::{Error, Leaf};
     use crate::validate::Validate;
     use uom::si::area::square_meter;
     use uom::si::f32::*;
-    use uom::si::length::{meter};
+    use uom::si::length::meter;
 
     #[test]
     fn it_works() {
@@ -89,8 +95,16 @@ mod tests {
             .build();
         let res = x * y;
         let validated = res
-            .validate("must be less than 1.0!!", |quantity| quantity < &Area::new::<square_meter>(1.0))
+            .validate("must be less than 1.0!!", |quantity| {
+                quantity < &Area::new::<square_meter>(1.0)
+            })
             .collect();
-        assert_eq!(Err(Error { label: "(mul)".to_string(), msg: vec!["must be less than 1.0!!".to_string()] }), validated);
+        assert_eq!(
+            Err(Error {
+                label: "(mul)".to_string(),
+                msg: vec!["must be less than 1.0!!".to_string()]
+            }),
+            validated
+        );
     }
 }

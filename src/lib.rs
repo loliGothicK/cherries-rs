@@ -9,7 +9,7 @@ pub mod validate;
 #[cfg(test)]
 mod tests {
     use crate::node::{Cherries, Leaf};
-    use uom::si::area::{square_meter,square_millimeter};
+    use uom::si::area::{square_meter, square_millimeter};
     use uom::si::f32::*;
     use uom::si::length::{meter, millimeter};
     use uom::si::volume::cubic_meter;
@@ -40,10 +40,7 @@ mod tests {
         assert_eq!(res.symbol(), "m^2".to_string());
         assert_eq!(res.quantity(), &Area::new::<square_millimeter>(8.0));
 
-        let x = Leaf::new()
-            .name("x")
-            .value(2.0)
-            .build();
+        let x = Leaf::new().name("x").value(2.0).build();
         let y = Leaf::new()
             .name("y")
             .value(Length::new::<meter>(4.0))
