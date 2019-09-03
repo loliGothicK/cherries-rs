@@ -2,8 +2,7 @@ extern crate uom;
 
 pub mod node;
 pub mod ops;
-#[macro_use]
-pub mod fold;
+#[macro_use] pub mod fold;
 pub mod validate;
 
 #[cfg(test)]

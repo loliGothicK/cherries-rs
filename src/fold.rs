@@ -86,34 +86,106 @@ where
     }
 }
 
+
 ///
+/// Fold left with product all given expression.
 ///
+/// The difference from normal multiplication is that all nodes are recorded in a single node sub-expression.
+///
+/// # Examples
+///
+/// ```
+/// # #[macro_use] extern crate cherries;
+/// # use cherries::node::{Cherries, Leaf};
+/// # use cherries::prod_all;
+/// # fn main() {
+///     let a = Leaf::new().value(2).name("a").build();
+///     let b = Leaf::new().value(3).name("b").build();
+///     let c = Leaf::new().value(4).name("c").build();
+///     let d = Leaf::new().value(1).name("d").build();
+///     let res = prod_all!(a, b, c, d);
+///     assert_eq!(&24, res.quantity());
+/// # }
+/// ```
 #[macro_export]
 macro_rules! prod_all {
     ( $head:expr, $( $tail:expr ),* ) => {
-        (crate::fold::FoldProxy { value: ($head).quantity().clone(), items: vec![Box::new($head)] }$( * $tail)*).into_expr()
+        ($crate::fold::FoldProxy { value: ($head).quantity().clone(), items: vec![Box::new($head)] }$( * $tail)*).into_expr()
     };
 }
 
+///
+/// Fold left with addition all given expression.
+///
+/// The difference from normal addition is that all nodes are recorded in a single node sub-expression.
+///
+/// # Examples
+///
+/// ```
+/// # #[macro_use] extern crate cherries;
+/// # use cherries::node::{Cherries, Leaf};
+/// # use cherries::sum_all;
+/// # fn main() {
+///     let a = Leaf::new().value(2).name("a").build();
+///     let b = Leaf::new().value(3).name("b").build();
+///     let c = Leaf::new().value(4).name("c").build();
+///     let d = Leaf::new().value(1).name("d").build();
+///     let res = sum_all!(a, b, c, d);
+///     assert_eq!(&10, res.quantity());
+/// # }
+/// ```
 #[macro_export]
 macro_rules! sum_all {
     ( $head:expr, $( $tail:expr ),* ) => {
-        (crate::fold::FoldProxy { value: ($head).quantity().clone(), items: vec![Box::new($head)] }$( + $tail)*).into_expr()
+        ($crate::fold::FoldProxy { value: ($head).quantity().clone(), items: vec![Box::new($head)] }$( + $tail)*).into_expr()
     };
 }
 
-// TODO: min
+///
+/// Fold left with `min` all given expression.
+///
+/// # Examples
+///
+/// ```
+/// # #[macro_use] extern crate cherries;
+/// # use cherries::node::{Cherries, Leaf};
+/// # fn main() {
+///     let a = Leaf::new().value(2).name("a").build();
+///     let b = Leaf::new().value(3).name("b").build();
+///     let c = Leaf::new().value(4).name("c").build();
+///     let d = Leaf::new().value(1).name("d").build();
+///     let res = minimum!(a, b, c, d);
+///     assert_eq!(&1, res.quantity());
+/// # }
+/// ```
 #[macro_export]
 macro_rules! minimum {
     ( $head:expr, $( $tail:expr ),* ) => {
-        (crate::fold::FoldProxy { value: ($head).quantity().clone(), items: vec![Box::new($head)] }$(.min($tail))*).into_expr()
+        ($crate::fold::FoldProxy { value: ($head).quantity().clone(), items: vec![Box::new($head)] }$(.min($tail))*).into_expr()
     };
 }
 
-// TODO: max
+///
+/// Fold left with `max` all given expression.
+///
+/// # Examples
+///
+/// ```
+/// # #[macro_use] extern crate cherries;
+/// # use cherries::node::{Cherries, Leaf};
+/// # use cherries::maximum;
+/// # fn main() {
+///     let a = Leaf::new().value(2).name("a").build();
+///     let b = Leaf::new().value(3).name("b").build();
+///     let c = Leaf::new().value(4).name("c").build();
+///     let d = Leaf::new().value(1).name("d").build();
+///     let res = maximum!(a, b, c, d);
+///     assert_eq!(&4, res.quantity());
+/// # }
+/// ```
 #[macro_export]
 macro_rules! maximum {
     ( $head:expr, $( $tail:expr ),* ) => {
-        (crate::fold::FoldProxy { value: ($head).quantity().clone(), items: vec![Box::new($head)] }$(.max($tail))*).into_expr()
+        ($crate::fold::FoldProxy { value: ($head).quantity().clone(), items: vec![Box::new($head)] }$(.max($tail))*).into_expr()
     };
 }
