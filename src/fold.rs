@@ -86,7 +86,6 @@ where
     }
 }
 
-
 ///
 /// Fold left with product all given expression.
 ///
