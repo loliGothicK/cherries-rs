@@ -10,6 +10,7 @@ use std::fmt::Debug;
 pub struct Error {
     pub label: String,
     pub msg: Vec<String>,
+    pub tree: String,
 }
 
 /// Type synonym for `std::result::Result<Cherry<T>, Error>`.
@@ -75,7 +76,8 @@ impl<T: Clone + Debug> ValidateChain<T> {
     ///            msg: vec![
     ///                 "must be less than 1.0!!".to_string(),
     ///                 "must be less than 0.0!!".to_string()
-    ///            ]
+    ///            ],
+    ///             tree: "json tree".to_string(),
     ///        }),
     ///        validated
     ///    );
@@ -88,6 +90,7 @@ impl<T: Clone + Debug> ValidateChain<T> {
             Err(Error {
                 label: self.cherry.name().to_owned(),
                 msg: self.errors.into_inner(),
+                tree: self.cherry.to_json(),
             })
         }
     }
@@ -142,7 +145,8 @@ pub trait Validate<T: Clone + Debug> {
 ///    assert_eq!(
 ///        Err(Error {
 ///            label: "(mul)".to_string(),
-///            msg: vec!["must be less than 1.0!!".to_string()]
+///            msg: vec!["must be less than 1.0!!".to_string()],
+///            tree: "json tree".to_string(),
 ///        }),
 ///        validated
 ///    );
@@ -209,7 +213,8 @@ impl<T: Clone + Debug> Validate<T> for Cherry<T> {
 ///            msg: vec![
 ///                 "must be less than 1.0!!".to_string(),
 ///                 "must be less than 0.0!!".to_string()
-///            ]
+///            ],
+///            tree: "json tree".to_string(),
 ///        }),
 ///        validated
 ///    );
