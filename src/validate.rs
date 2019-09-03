@@ -3,13 +3,85 @@ use std::cell::RefCell;
 use std::clone::Clone;
 use std::fmt::Debug;
 
-pub struct ValidateProxy<T: Clone + Debug> {
+///
+/// For validation.
+///
+#[derive(Debug)]
+pub struct Error {
+    pub label: String,
+    pub msg: Vec<String>,
+}
+
+/// Type synonym for `std::result::Result<Cherry<T>, Error>`.
+///
+/// Used in validation.
+///
+pub type Result<T> = std::result::Result<Cherry<T>, Error>;
+
+
+
+impl PartialEq for Error {
+    fn eq(&self, other: &Self) -> bool {
+        (self.label == other.label) && (self.msg == other.msg)
+    }
+}
+
+
+pub struct ValidateChain<T: Clone + Debug> {
     pub cherry: Cherry<T>,
     pub errors: RefCell<Vec<String>>,
 }
 
-impl<T: Clone + Debug> ValidateProxy<T> {
-    pub fn collect(self) -> crate::node::Result<T> {
+///
+/// Immediate proxy for validation
+///
+/// Provides method `collect` to aggregate validation error.
+///
+impl<T: Clone + Debug> ValidateChain<T> {
+    ///
+    /// Aggregates validation error.
+    ///
+    /// Coverts `ValidateProxy<T>` to [`cherries::Result<T>`](../node/type.Result.html).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// extern crate cherries;
+/// use cherries::{node::Leaf, validate::{Validate, Error}};
+    /// extern crate uom;
+    /// use uom::si::{f32::*, length::meter, area::square_meter};
+    ///
+    /// fn main() {
+    ///    let x = Leaf::new()
+    ///        .name("x")
+    ///        .value(Length::new::<meter>(2.0))
+    ///        .build();
+    ///    let y = Leaf::new()
+    ///        .name("y")
+    ///        .value(Length::new::<meter>(1.0))
+    ///        .build();
+    ///    let res = x * y;
+    ///    let validated = res
+    ///        .validate("must be less than 1.0!!", |quantity| {
+    ///            quantity < &Area::new::<square_meter>(1.0)
+    ///        })
+    ///        .validate("must be less than 0.0!!", |quantity| {
+    ///            quantity < &Area::new::<square_meter>(0.0)
+    ///        })
+    ///        .collect();
+    ///    assert_eq!(
+    ///        Err(Error {
+    ///            label: "(mul)".to_string(),
+    ///            msg: vec![
+    ///                 "must be less than 1.0!!".to_string(),
+    ///                 "must be less than 0.0!!".to_string()
+    ///            ]
+    ///        }),
+    ///        validated
+    ///    );
+    /// }
+    /// ```
+    pub fn collect(self) -> Result<T> {
         if self.errors.borrow().is_empty() {
             Ok(self.cherry.to_owned())
         } else {
@@ -21,34 +93,78 @@ impl<T: Clone + Debug> ValidateProxy<T> {
     }
 }
 
+///
+/// Trait: Validate
+///
+/// Provides method `validate`.
+///
 pub trait Validate<T: Clone + Debug> {
     fn validate<IntoString, Predicate>(
         self,
         msg: IntoString,
         predicate: Predicate,
-    ) -> ValidateProxy<T>
+    ) -> ValidateChain<T>
     where
         IntoString: Into<String>,
         Predicate: FnOnce(&T) -> bool;
 }
 
+///
+/// Trait: Validate for `Cherry<T>`
+///
+/// Provides `validate` function.
+/// `self.validate(predicate)` returns `ValidateProxy<T>`.
+/// `ValidateProxy<T>` also has `validate` to chain for validation.
+///
+/// # Examples
+///
+/// ```
+/// extern crate cherries;
+/// use cherries::{node::Leaf, validate::{Validate, Error}};
+/// extern crate uom;
+/// use uom::si::{f32::*, length::meter, area::square_meter};
+///
+/// fn main() {
+///    let x = Leaf::new()
+///        .name("x")
+///        .value(Length::new::<meter>(2.0))
+///        .build();
+///    let y = Leaf::new()
+///        .name("y")
+///        .value(Length::new::<meter>(1.0))
+///        .build();
+///    let res = x * y;
+///    let validated = res
+///        .validate("must be less than 1.0!!", |quantity| {
+///            quantity < &Area::new::<square_meter>(1.0)
+///        })
+///        .collect();
+///    assert_eq!(
+///        Err(Error {
+///            label: "(mul)".to_string(),
+///            msg: vec!["must be less than 1.0!!".to_string()]
+///        }),
+///        validated
+///    );
+/// }
+/// ```
 impl<T: Clone + Debug> Validate<T> for Cherry<T> {
     fn validate<IntoString, Predicate>(
         self,
         msg: IntoString,
         predicate: Predicate,
-    ) -> ValidateProxy<T>
+    ) -> ValidateChain<T>
     where
         IntoString: Into<String>,
         Predicate: FnOnce(&T) -> bool,
     {
         if predicate(&self.quantity()) {
-            ValidateProxy {
+            ValidateChain {
                 cherry: self.to_owned(),
                 errors: RefCell::new(vec![]),
             }
         } else {
-            ValidateProxy {
+            ValidateChain {
                 cherry: self.to_owned(),
                 errors: RefCell::new(vec![msg.into()]),
             }
@@ -56,12 +172,55 @@ impl<T: Clone + Debug> Validate<T> for Cherry<T> {
     }
 }
 
-impl<T: Clone + Debug> Validate<T> for ValidateProxy<T> {
+///
+/// For validation chaining.
+///
+/// `self.validate(predicate)` returns `ValidateProxy<T>`.
+///
+/// # Examples
+///
+/// ```
+/// extern crate cherries;
+/// use cherries::{node::Leaf, validate::{Validate, Error}};
+/// extern crate uom;
+/// use uom::si::{f32::*, length::meter, area::square_meter};
+///
+/// fn main() {
+///    let x = Leaf::new()
+///        .name("x")
+///        .value(Length::new::<meter>(2.0))
+///        .build();
+///    let y = Leaf::new()
+///        .name("y")
+///        .value(Length::new::<meter>(1.0))
+///        .build();
+///    let res = x * y;
+///    let validated = res
+///        .validate("must be less than 1.0!!", |quantity| {
+///            quantity < &Area::new::<square_meter>(1.0)
+///        })
+///        .validate("must be less than 0.0!!", |quantity| {
+///            quantity < &Area::new::<square_meter>(0.0)
+///        })
+///        .collect();
+///    assert_eq!(
+///        Err(Error {
+///            label: "(mul)".to_string(),
+///            msg: vec![
+///                 "must be less than 1.0!!".to_string(),
+///                 "must be less than 0.0!!".to_string()
+///            ]
+///        }),
+///        validated
+///    );
+/// }
+/// ```
+impl<T: Clone + Debug> Validate<T> for ValidateChain<T> {
     fn validate<IntoString, Predicate>(
         self,
         msg: IntoString,
         predicate: Predicate,
-    ) -> ValidateProxy<T>
+    ) -> ValidateChain<T>
     where
         IntoString: Into<String>,
         Predicate: FnOnce(&T) -> bool,
@@ -72,39 +231,5 @@ impl<T: Clone + Debug> Validate<T> for ValidateProxy<T> {
             self.errors.borrow_mut().push(msg.into());
             self
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::node::{Error, Leaf};
-    use crate::validate::Validate;
-    use uom::si::area::square_meter;
-    use uom::si::f32::*;
-    use uom::si::length::meter;
-
-    #[test]
-    fn it_works() {
-        let x = Leaf::new()
-            .name("x")
-            .value(Length::new::<meter>(2.0))
-            .build();
-        let y = Leaf::new()
-            .name("y")
-            .value(Length::new::<meter>(1.0))
-            .build();
-        let res = x * y;
-        let validated = res
-            .validate("must be less than 1.0!!", |quantity| {
-                quantity < &Area::new::<square_meter>(1.0)
-            })
-            .collect();
-        assert_eq!(
-            Err(Error {
-                label: "(mul)".to_string(),
-                msg: vec!["must be less than 1.0!!".to_string()]
-            }),
-            validated
-        );
     }
 }

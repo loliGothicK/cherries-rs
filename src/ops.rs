@@ -2,6 +2,30 @@ use super::node::{Cherries, Cherry, Node};
 use std::fmt::Debug;
 use std::ops::{Add, Div, Mul, Sub};
 
+///
+/// impl Add<Cherry<U>> for Cherry<T>
+///
+/// Provides a operation `lhs + rhs` (`lhs: Cherry<T>, rhs: Cherry<U>`), where `T: Add<U>`.
+///
+/// # Examples
+///
+/// ```
+/// extern crate cherries;
+/// use cherries::node::{Leaf, Node, Cherry};
+///
+/// fn main() {
+///    let x = Leaf::new()
+///        .name("x")
+///        .value(1)
+///        .build();
+///    let y = Leaf::new()
+///        .name("y")
+///        .value(1)
+///        .build();
+///    let res = x + y;
+///    assert_eq!(res.quantity(), &2);
+/// }
+/// ```
 impl<T, U> Add<Cherry<U>> for Cherry<T>
 where
     T: 'static + Clone + Debug + Add<U>,
@@ -19,6 +43,28 @@ where
     }
 }
 
+///
+/// impl Sub<Cherry<U>> for Cherry<T>
+///
+/// Provides a operation `lhs - rhs` (`lhs: Cherry<T>, rhs: Cherry<U>`), where `T: Sub<U>`.
+///
+/// ```
+/// extern crate cherries;
+/// use cherries::node::{Leaf, Node, Cherry};
+///
+/// fn main() {
+///    let x = Leaf::new()
+///        .name("x")
+///        .value(1)
+///        .build();
+///    let y = Leaf::new()
+///        .name("y")
+///        .value(1)
+///        .build();
+///    let res = x - y;
+///    assert_eq!(res.quantity(), &0);
+/// }
+/// ```
 impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Sub<Cherry<U>> for Cherry<T>
 where
     T: Sub<U>,
@@ -35,6 +81,28 @@ where
     }
 }
 
+///
+/// impl Mul<Cherry<U>> for Cherry<T>
+///
+/// Provides a operation `lhs * rhs` (`lhs: Cherry<T>, rhs: Cherry<U>`), where `T: Mul<U>`.
+///
+/// ```
+/// extern crate cherries;
+/// use cherries::node::{Leaf, Node, Cherry};
+///
+/// fn main() {
+///    let x = Leaf::new()
+///        .name("x")
+///        .value(2)
+///        .build();
+///    let y = Leaf::new()
+///        .name("y")
+///        .value(2)
+///        .build();
+///    let res = x * y;
+///    assert_eq!(res.quantity(), &4);
+/// }
+/// ```
 impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Mul<Cherry<U>> for Cherry<T>
 where
     T: Mul<U>,
@@ -51,6 +119,28 @@ where
     }
 }
 
+///
+/// impl Div<Cherry<U>> for Cherry<T>
+///
+/// Provides a operation `lhs / rhs` (`lhs: Cherry<T>, rhs: Cherry<U>`), where `T: Div<U>`.
+///
+/// ```
+/// extern crate cherries;
+/// use cherries::node::{Leaf, Node, Cherry};
+///
+/// fn main() {
+///    let x = Leaf::new()
+///        .name("x")
+///        .value(4)
+///        .build();
+///    let y = Leaf::new()
+///        .name("y")
+///        .value(2)
+///        .build();
+///    let res = x / y;
+///    assert_eq!(res.quantity(), &2);
+/// }
+/// ```
 impl<T: 'static + Clone + Debug, U: 'static + Clone + Debug> Div<Cherry<U>> for Cherry<T>
 where
     T: Div<U>,

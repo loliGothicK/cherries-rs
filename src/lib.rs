@@ -12,7 +12,6 @@ mod tests {
     use uom::si::area::{square_meter, square_millimeter};
     use uom::si::f32::*;
     use uom::si::length::{meter, millimeter};
-    use uom::si::volume::cubic_meter;
 
     #[test]
     fn basic_tests() {
@@ -67,3 +66,41 @@ mod tests {
         println!("{}", res.to_json());
     }
 }
+#[cfg(test)]
+mod label_tests {
+    use crate::node::{Leaf, Cherries};
+    # [test]
+    fn it_works() {
+        // labeling
+        let node = Leaf::new().value(1).name("node").build();
+        assert_eq ! (node.name(), & "node".to_string());
+
+        // renaming
+        let node = node.label("renamed");
+        assert_eq ! (node.name(), &"renamed".to_string());
+        let a = Leaf::new().value(2).name("a").build();
+        let b = Leaf::new().value(3).name("b").build();
+        let c = Leaf::new().value(4).name("c").build();
+        let d = Leaf::new().value(1).name("d").build();
+
+        let e = a + b;
+        let f = c - d;
+        let res = e * f;
+        println!("{}", res.to_json());
+    }
+}
+#[cfg(test)]
+mod validate_tests {
+    use crate::node::{Leaf, Cherry, Cherries};
+    use crate::validate::{Validate, ValidateChain, Error};
+    #[test]
+    fn it_works() {
+        let node = Leaf::new().value(2).name("node").build();
+        let validated = node
+            .validate("must be even", |v| v % 2 == 0)
+            .collect();
+
+        assert_eq!(validated, Ok(Leaf::new().value(2).name("node").build()));
+    }
+}
+
