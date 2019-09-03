@@ -52,7 +52,8 @@ impl<T: Clone + Debug> Cherries for Cherry<T> {
     ///
     /// Returns node value or error string.
     ///
-    /// This method try to parse value from format string (help me).
+    /// This method try to parse value from format string for uom support.
+    /// There should be some other better way (help me, please!).
     ///
     /// # Examples
     /// ```
@@ -71,15 +72,15 @@ impl<T: Clone + Debug> Cherries for Cherry<T> {
     /// ```
     fn value(&self) -> std::result::Result<f32, String> {
         let re = Regex::new(r#"^(.*?) .*$"#).unwrap();
-        let format = format!("{:?}", self.quantity()).to_owned();
-        match format.parse::<f32>() {
+        let formats = format!("{:?}", self.quantity()).to_owned();
+        match formats.parse::<f32>() {
             Ok(value) => Ok(value),
             Err(_) => {
-                re.captures_iter(format.clone().as_str())
+                re.captures_iter(formats.clone().as_str())
                     .last()
-                    .map_or(Err(format.clone()), |x| {
-                        x.get(1).map_or(Err(format.clone()), |x| {
-                            x.as_str().parse::<f32>().map_err(|_| format)
+                    .map_or(Err(formats.clone()), |x| {
+                        x.get(1).map_or(Err(formats.clone()), |x| {
+                            x.as_str().parse::<f32>().map_err(|_| formats)
                         })
                     })
             }
@@ -107,15 +108,15 @@ impl<T: Clone + Debug> Cherries for Cherry<T> {
     /// ```
     fn symbol(&self) -> String {
         let re = Regex::new(r#".*? (.*)"#).unwrap();
-        let format = format!("{:?}", self.quantity()).to_owned();
-        re.captures_iter(format.clone().as_str())
+        let formats = format!("{:?}", self.quantity()).to_owned();
+        re.captures_iter(formats.clone().as_str())
             .last()
             .map(|x| {
                 x.get(1)
                     .map(|x| x.as_str().to_string())
-                    .unwrap_or("dimensionless".to_string())
+                    .unwrap_or_else(|| "dimensionless".to_string())
             })
-            .unwrap_or("dimensionless".to_string())
+            .unwrap_or_else(|| "dimensionless".to_string())
     }
     ///
     /// Returns expression log as json string.

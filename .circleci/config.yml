@@ -1,0 +1,45 @@
+version: 2.1
+
+executors:
+  rust:
+    docker:
+      - image: rust:1.37.0-slim-buster
+    working_directory: /home/circleci/repo
+jobs:
+  build_and_tset:
+    executor: rust
+    steps:
+      - checkout
+      - run: apt upgrade -y && apt update -y && apt install -y git
+      - run: git submodule update --init --recursive --remote
+      - run: rustup component add clippy
+      - run: cargo clippy
+      - run: cargo build --release
+      - run: cargo test -- --nocapture
+
+  package_deploy:
+    executor: rust
+    steps:
+      - run:
+          name: cargo publish
+          command: |
+            cargo login $CRATES_IO_API_TOKEN
+            cargo publish
+
+workflows:
+  version: 2.1
+  build:
+    jobs:
+      - build_and_tset:
+          filters:
+            tags:
+              only: /.*/
+      - package_deploy:
+          requires:
+            - build_and_tset
+          filters:
+            tags:
+              only: /^\d+\.\d+\.\d+$/
+            branches:
+              only:
+                - master

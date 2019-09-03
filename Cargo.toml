@@ -1,6 +1,6 @@
 [package]
 name = "cherries"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Mitama <loligothick@gmail.com>"]
 edition = "2018"
 description = "Expression tree logging"

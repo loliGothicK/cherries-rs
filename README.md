@@ -1,13 +1,16 @@
 # Cherries the expression logging library
 
+[![cherries at crates.io](https://img.shields.io/crates/v/cherries.svg)](https://crates.io/crates/cherries)
+[![cherries at docs.rs](https://docs.rs/cherries/badge.svg)](https://docs.rs/cherries)
+
 Cherries is a crate that does expression logging as json structure.
 
 ## Usage
-uom requires rustc 1.37.0 or later. Add this to your Cargo.toml:
+cherries requires rustc 1.37.0 or later. Add this to your Cargo.toml:
 
 ```yaml
 [dependencies]
-cherries = "0.1.0"
+cherries = "0.2.0"
 ```
 
 ### Labeling
@@ -30,6 +33,12 @@ fn main() {
 ```
 
 ### Validation
+
+Validation utilities are in module `cherries::validate`.
+
+- Validate: Provides Extension Method `validate` to `Cherry<T>`. 
+- ValidateChain: Allows to chain `validate` and `collect`.
+- Error: Information struct for validation errors.
 
 ```rust
 extern crate cherries;
@@ -65,6 +74,8 @@ fn main() {
 ```
 
 ### Get json string
+
+You can get expression tree with json structure using `Cherries::to_json()`. 
 
 ```rust
 extern crate cherries;
