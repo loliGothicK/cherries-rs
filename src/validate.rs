@@ -19,14 +19,11 @@ pub struct Error {
 ///
 pub type Result<T> = std::result::Result<Cherry<T>, Error>;
 
-
-
 impl PartialEq for Error {
     fn eq(&self, other: &Self) -> bool {
         (self.label == other.label) && (self.msg == other.msg)
     }
 }
-
 
 pub struct ValidateChain<T: Clone + Debug> {
     pub cherry: Cherry<T>,
@@ -48,7 +45,7 @@ impl<T: Clone + Debug> ValidateChain<T> {
     ///
     /// ```
     /// extern crate cherries;
-/// use cherries::{node::Leaf, validate::{Validate, Error}};
+    /// use cherries::{node::Leaf, validate::{Validate, Error}};
     /// extern crate uom;
     /// use uom::si::{f32::*, length::meter, area::square_meter};
     ///

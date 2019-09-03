@@ -68,16 +68,16 @@ mod tests {
 }
 #[cfg(test)]
 mod label_tests {
-    use crate::node::{Leaf, Cherries};
-    # [test]
+    use crate::node::{Cherries, Leaf};
+    #[test]
     fn it_works() {
         // labeling
         let node = Leaf::new().value(1).name("node").build();
-        assert_eq ! (node.name(), & "node".to_string());
+        assert_eq!(node.name(), &"node".to_string());
 
         // renaming
         let node = node.label("renamed");
-        assert_eq ! (node.name(), &"renamed".to_string());
+        assert_eq!(node.name(), &"renamed".to_string());
         let a = Leaf::new().value(2).name("a").build();
         let b = Leaf::new().value(3).name("b").build();
         let c = Leaf::new().value(4).name("c").build();
@@ -91,16 +91,27 @@ mod label_tests {
 }
 #[cfg(test)]
 mod validate_tests {
-    use crate::node::{Leaf, Cherry, Cherries};
-    use crate::validate::{Validate, ValidateChain, Error};
+    use crate::node::{Cherries, Cherry, Leaf};
+    use crate::validate::{Error, Validate, ValidateChain};
     #[test]
     fn it_works() {
         let node = Leaf::new().value(2).name("node").build();
-        let validated = node
-            .validate("must be even", |v| v % 2 == 0)
-            .collect();
+        let validated = node.validate("must be even", |v| v % 2 == 0).collect();
 
         assert_eq!(validated, Ok(Leaf::new().value(2).name("node").build()));
     }
 }
-
+#[cfg(test)]
+mod fold_tests {
+    use crate::node::{Cherries, Leaf};
+    #[test]
+    fn it_works() {
+        let a = Leaf::new().value(2).name("a").build();
+        let b = Leaf::new().value(3).name("b").build();
+        let c = Leaf::new().value(4).name("c").build();
+        let d = Leaf::new().value(1).name("d").build();
+        let res = maximum!(a, b, c, d);
+        assert_eq!(&4, res.quantity());
+        println!("{}", res.to_json());
+    }
+}
