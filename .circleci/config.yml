@@ -24,7 +24,6 @@ jobs:
           name: cargo publish
           command: |
             cargo login $CRATES_IO_API_TOKEN
-
             cargo publish
 
 workflows:

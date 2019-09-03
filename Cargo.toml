@@ -1,9 +1,18 @@
-gg[package]
-name = "cherries-rs"
-version = "0.1.0"
+[package]
+name = "cherries"
+version = "0.1.1"
 authors = ["Mitama <loligothick@gmail.com>"]
 edition = "2018"
-
+description = "Expression tree logging"
+documentation = "https://docs.rs/cherries"
+repository = "https://github.com/LoliGothick/cherries-rs"
+readme = "README.md"
+keywords = ["logging", "expression-tree"]
+license = "MIT"
+#autobins = true
+#autoexamples = true
+#autotests = true
+#autobenches = true
 [lib]
 name = "cherries"
 
