@@ -10,7 +10,7 @@ cherries requires rustc 1.37.0 or later. Add this to your Cargo.toml:
 
 ```yaml
 [dependencies]
-cherries = "0.1.1"
+cherries = "0.2.0"
 ```
 
 ### Labeling
