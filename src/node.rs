@@ -75,15 +75,14 @@ impl<T: Clone + Debug> Cherries for Cherry<T> {
         let formats = format!("{:?}", self.quantity()).to_owned();
         match formats.parse::<f32>() {
             Ok(value) => Ok(value),
-            Err(_) => {
-                re.captures_iter(formats.clone().as_str())
-                    .last()
-                    .map_or(Err(formats.clone()), |x| {
-                        x.get(1).map_or(Err(formats.clone()), |x| {
-                            x.as_str().parse::<f32>().map_err(|_| formats)
-                        })
+            Err(_) => re.captures_iter(formats.clone().as_str()).last().map_or(
+                Err(formats.clone()),
+                |x| {
+                    x.get(1).map_or(Err(formats.clone()), |x| {
+                        x.as_str().parse::<f32>().map_err(|_| formats)
                     })
-            }
+                },
+            ),
         }
     }
     ///
@@ -231,12 +230,12 @@ impl<T: Clone + Debug> Cherry<T> {
     /// fn main() {
     ///     let node = Leaf::new().value(1).name("node").build();
     ///     assert_eq!(node.name(), &"node".to_string());
-    ///     let node = node.label("renamed");
+    ///     let node = node.labeled("renamed");
     ///     assert_eq!(node.name(), &"renamed".to_string());
     /// }
     ///
     /// ```
-    pub fn label<S: Into<String>>(self, name: S) -> Cherry<T> {
+    pub fn labeled<S: Into<String>>(self, name: S) -> Cherry<T> {
         Cherry {
             label: name.into(),
             value: self.value,
@@ -258,7 +257,7 @@ impl<T: Clone + Debug> Cherry<T> {
     ///         .name("x")
     ///         .value(Length::new::<meter>(2.1))
     ///         .build();
-    ///     let res = x.map(|x| x.floor::<meter>()).label("floor");
+    ///     let res = x.map(|x| x.floor::<meter>()).labeled("floor");
     ///     assert_eq!(&Length::new::<meter>(2.0), res.quantity());
     /// }
     ///

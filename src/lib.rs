@@ -2,7 +2,8 @@ extern crate uom;
 
 pub mod node;
 pub mod ops;
-#[macro_use] pub mod fold;
+#[macro_use]
+pub mod fold;
 pub mod validate;
 
 #[cfg(test)]
@@ -48,7 +49,7 @@ mod tests {
             .value(Length::new::<meter>(8.0))
             .build();
 
-        let res = prod_all!(x, y, z).label("xyz");
+        let res = prod_all!(x, y, z).labeled("xyz");
         assert_eq!(&Area::new::<square_meter>(64.0), res.quantity());
         assert_eq!(res.name(), &"xyz".to_string());
         println!("{}", res.to_json());
@@ -59,7 +60,7 @@ mod tests {
             .name("x")
             .value(Length::new::<meter>(2.1))
             .build();
-        let res = x.map(|x| x.floor::<meter>()).label("floor");
+        let res = x.map(|x| x.floor::<meter>()).labeled("floor");
         assert_eq!(&Length::new::<meter>(2.0), res.quantity());
         assert_eq!(&"floor".to_string(), res.name());
         println!("{}", res.to_json());
@@ -75,7 +76,7 @@ mod label_tests {
         assert_eq!(node.name(), &"node".to_string());
 
         // renaming
-        let node = node.label("renamed");
+        let node = node.labeled("renamed");
         assert_eq!(node.name(), &"renamed".to_string());
         let a = Leaf::new().value(2).name("a").build();
         let b = Leaf::new().value(3).name("b").build();

@@ -2,15 +2,17 @@
 
 [![cherries at crates.io](https://img.shields.io/crates/v/cherries.svg)](https://crates.io/crates/cherries)
 [![cherries at docs.rs](https://docs.rs/cherries/badge.svg)](https://docs.rs/cherries)
+[![CircleCI](https://circleci.com/gh/LoliGothick/cherries-rs/tree/master.svg?style=svg)](https://circleci.com/gh/LoliGothick/cherries-rs/tree/master)
+![Github Actions](http://aliyunfc.tarocch1.com/github-actions-badge/LoliGothick/cherries-rs)
 
 Cherries is a crate that does expression logging as json structure.
 
 ## Usage
-cherries requires rustc 1.37.0 or later. Add this to your Cargo.toml:
+**cherries** requires rustc 1.37.0 or later. Add this to your `Cargo.toml`:
 
 ```yaml
 [dependencies]
-cherries = "0.2.0"
+cherries = "0.2.1"
 ```
 
 ### Labeling
@@ -66,7 +68,8 @@ fn main() {
             msg: vec![
                  "must be even".to_string(),
                  "must be less than 4".to_string()
-            ]
+            ],
+            tree: "some json".to_string()
         }),
         validated
     );
