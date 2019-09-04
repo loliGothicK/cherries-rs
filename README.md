@@ -29,7 +29,7 @@ fn main() {
     assert_eq!(node.name(), &"node".to_string());
     
     // renaming
-    let node = node.label("renamed");
+    let node = node.labeled("renamed");
     assert_eq!(node.name(), &"renamed".to_string());
 }
 ```
