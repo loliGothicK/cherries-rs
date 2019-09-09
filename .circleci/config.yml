@@ -46,7 +46,7 @@ workflows:
             - build_and_tset
           filters:
             tags:
-              only: /^\d+\.\d+\.\d+$/
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+$/
             branches:
               only:
                 - master
