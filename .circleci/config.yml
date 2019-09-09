@@ -16,37 +16,9 @@ jobs:
       - run: cargo clippy
       - run: cargo build --release
       - run: cargo test -- --nocapture
-      - persist_to_workspace:
-          root: /home/circleci
-          paths:
-            - repo
-
-
-  package_deploy:
-    executor: rust
-    steps:
-      - attach_workspace:
-          at: /home/circleci
-      - run:
-          name: cargo publish
-          command: |
-            cargo login $CRATES_IO_API_TOKEN
-            cargo publish
 
 workflows:
   version: 2.1
   build:
     jobs:
-      - build_and_tset:
-          filters:
-            tags:
-              only: /.*/
-      - package_deploy:
-          requires:
-            - build_and_tset
-          filters:
-            tags:
-              only: /^\d+\.\d+\.\d+$/
-            branches:
-              only:
-                - master
+      - build_and_tset

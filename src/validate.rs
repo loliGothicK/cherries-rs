@@ -3,7 +3,6 @@ use std::cell::RefCell;
 use std::clone::Clone;
 use std::fmt::Debug;
 
-///
 /// For validation.
 ///
 #[derive(Debug)]
@@ -33,7 +32,7 @@ pub struct ValidateChain<T: Clone + Debug> {
 ///
 /// Immediate proxy for validation
 ///
-/// Provides method `collect` to aggregate validation error.
+/// Provides method `into_result` to aggregate validation error.
 ///
 impl<T: Clone + Debug> ValidateChain<T> {
     ///
@@ -66,7 +65,7 @@ impl<T: Clone + Debug> ValidateChain<T> {
     ///        .validate("must be less than 0.0!!", |quantity| {
     ///            quantity < &Area::new::<square_meter>(0.0)
     ///        })
-    ///        .collect();
+    ///        .into_result();
     ///    assert_eq!(
     ///        Err(Error {
     ///            label: "(mul)".to_string(),
@@ -74,13 +73,13 @@ impl<T: Clone + Debug> ValidateChain<T> {
     ///                 "must be less than 1.0!!".to_string(),
     ///                 "must be less than 0.0!!".to_string()
     ///            ],
-    ///             tree: "json tree".to_string(),
+    ///            tree: "json tree".to_string(),
     ///        }),
     ///        validated
     ///    );
     /// }
     /// ```
-    pub fn collect(self) -> Result<T> {
+    pub fn into_result(self) -> Result<T> {
         if self.errors.borrow().is_empty() {
             Ok(self.cherry.to_owned())
         } else {
@@ -138,7 +137,7 @@ pub trait Validate<T: Clone + Debug> {
 ///        .validate("must be less than 1.0!!", |quantity| {
 ///            quantity < &Area::new::<square_meter>(1.0)
 ///        })
-///        .collect();
+///        .into_result();
 ///    assert_eq!(
 ///        Err(Error {
 ///            label: "(mul)".to_string(),
@@ -203,7 +202,7 @@ impl<T: Clone + Debug> Validate<T> for Cherry<T> {
 ///        .validate("must be less than 0.0!!", |quantity| {
 ///            quantity < &Area::new::<square_meter>(0.0)
 ///        })
-///        .collect();
+///        .into_result();
 ///    assert_eq!(
 ///        Err(Error {
 ///            label: "(mul)".to_string(),
