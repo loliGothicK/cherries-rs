@@ -29,20 +29,30 @@ impl<T: Clone + Debug> FoldProxy<T> {
 }
 
 #[doc(hidden)]
-impl<T: 'static + Clone + Debug + std::cmp::Ord> FoldProxy<T> {
+impl<T: 'static + Clone + Debug + std::cmp::PartialOrd> FoldProxy<T> {
     pub fn max(self, other: Cherry<T>) -> FoldProxy<T> {
-        use std::cmp::max;
+        use std::cmp::Ordering;
         let mut ret = FoldProxy {
-            value: max(self.value, other.quantity().clone()),
+            value: match (&self.value).partial_cmp(other.quantity()) {
+                Some(Ordering::Less) => other.quantity().clone(),
+                Some(Ordering::Greater) => self.value.clone(),
+                Some(Ordering::Equal) => self.value.clone(),
+                None => { panic!("cannot compare {:?} and {:?}.", self.value, other.quantity()); }
+            },
             items: self.items,
         };
         ret.items.push(Box::new(other));
         ret
     }
     pub fn min(self, other: Cherry<T>) -> FoldProxy<T> {
-        use std::cmp::min;
+        use std::cmp::Ordering;
         let mut ret = FoldProxy {
-            value: min(self.value, other.quantity().clone()),
+            value: match (&self.value).partial_cmp(other.quantity()) {
+                Some(Ordering::Less) => self.value.clone(),
+                Some(Ordering::Greater) => other.quantity().clone(),
+                Some(Ordering::Equal) => self.value.clone(),
+                None => { panic!("cannot compare {:?} and {:?}.", self.value, other.quantity()); }
+            },
             items: self.items,
         };
         ret.items.push(Box::new(other));
@@ -143,6 +153,9 @@ macro_rules! sum_all {
 ///
 /// Fold left with `min` all given expression.
 ///
+/// This marco uses `partial_cmp` inside the expanded codes.
+/// Panics if and only if `partial_cmp` returns `None`.
+///
 /// # Examples
 ///
 /// ```
@@ -166,6 +179,9 @@ macro_rules! minimum {
 
 ///
 /// Fold left with `max` all given expression.
+///
+/// This marco uses `partial_cmp` inside the expanded codes.
+/// Panics if and only if `partial_cmp` returns `None`.
 ///
 /// # Examples
 ///

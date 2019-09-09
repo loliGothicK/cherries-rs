@@ -12,12 +12,12 @@ Cherries is a crate that does expression logging as json structure.
 
 ```yaml
 [dependencies]
-cherries = "0.2.1"
+cherries = "0.2.2"
 ```
 
 ### Labeling
 
-You can label to leaf with builder or rename with label method.
+You can label to leaf with builder or rename with `labeled` method.
 
 ```rust
 extern crate cherries;
@@ -29,7 +29,7 @@ fn main() {
     assert_eq!(node.name(), &"node".to_string());
     
     // renaming
-    let node = node.label("renamed");
+    let node = node.labeled("renamed");
     assert_eq!(node.name(), &"renamed".to_string());
 }
 ```
@@ -38,8 +38,8 @@ fn main() {
 
 Validation utilities are in module `cherries::validate`.
 
-- Validate: Provides Extension Method `validate` to `Cherry<T>`. 
-- ValidateChain: Allows to chain `validate` and `collect`.
+- Validate: Trait that provides extension method `validate` to `Cherry<T>`.
+- ValidateChain: Struct that allows to chain `validate` and provides `into_result`.
 - Error: Information struct for validation errors.
 
 ```rust
@@ -52,7 +52,7 @@ fn main() {
     let validated = node
         .validate("must be even", |v| v % 2 == 0)
         .validate("must be less than 4", |v| v < 4)
-        .collect();
+        .into_result();
 
     assert_eq!(validated, Ok(Leaf::new().value(2).name("node").build()));
 
@@ -60,7 +60,7 @@ fn main() {
     let validated = node
         .validate("must be even", |v| v % 2 == 0)
         .validate("must be less than 4", |v| v < 4)
-        .collect();
+        .into_result();
 
     assert_eq!(
         Err(Error {

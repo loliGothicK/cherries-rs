@@ -96,7 +96,7 @@ mod validate_tests {
     #[test]
     fn it_works() {
         let node = Leaf::new().value(2).name("node").build();
-        let validated = node.validate("must be even", |v| v % 2 == 0).collect();
+        let validated = node.validate("must be even", |v| v % 2 == 0).into_result();
 
         assert_eq!(validated, Ok(Leaf::new().value(2).name("node").build()));
     }
@@ -104,14 +104,16 @@ mod validate_tests {
 #[cfg(test)]
 mod fold_tests {
     use crate::node::{Cherries, Leaf};
+    use uom::si::i32::*;
+    use uom::si::length::meter;
     #[test]
     fn it_works() {
-        let a = Leaf::new().value(2).name("a").build();
-        let b = Leaf::new().value(3).name("b").build();
-        let c = Leaf::new().value(4).name("c").build();
-        let d = Leaf::new().value(1).name("d").build();
+        let a = Leaf::new().value(Length::new::<meter>(2)).name("a").build();
+        let b = Leaf::new().value(Length::new::<meter>(3)).name("b").build();
+        let c = Leaf::new().value(Length::new::<meter>(4)).name("c").build();
+        let d = Leaf::new().value(Length::new::<meter>(1)).name("d").build();
         let res = maximum!(a, b, c, d);
-        assert_eq!(&4, res.quantity());
+        assert_eq!(&Length::new::<meter>(4), res.quantity());
         println!("{}", res.to_json());
     }
 }
