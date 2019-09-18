@@ -1,5 +1,6 @@
 extern crate uom;
 
+pub mod cmp;
 pub mod node;
 pub mod ops;
 #[macro_use]

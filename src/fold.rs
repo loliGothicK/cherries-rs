@@ -37,7 +37,13 @@ impl<T: 'static + Clone + Debug + std::cmp::PartialOrd> FoldProxy<T> {
                 Some(Ordering::Less) => other.quantity().clone(),
                 Some(Ordering::Greater) => self.value.clone(),
                 Some(Ordering::Equal) => self.value.clone(),
-                None => { panic!("cannot compare {:?} and {:?}.", self.value, other.quantity()); }
+                None => {
+                    panic!(
+                        "cannot compare {:?} and {:?}.",
+                        self.value,
+                        other.quantity()
+                    );
+                }
             },
             items: self.items,
         };
@@ -51,7 +57,13 @@ impl<T: 'static + Clone + Debug + std::cmp::PartialOrd> FoldProxy<T> {
                 Some(Ordering::Less) => self.value.clone(),
                 Some(Ordering::Greater) => other.quantity().clone(),
                 Some(Ordering::Equal) => self.value.clone(),
-                None => { panic!("cannot compare {:?} and {:?}.", self.value, other.quantity()); }
+                None => {
+                    panic!(
+                        "cannot compare {:?} and {:?}.",
+                        self.value,
+                        other.quantity()
+                    );
+                }
             },
             items: self.items,
         };

@@ -12,7 +12,7 @@ Cherries is a crate that does expression logging as json structure.
 
 ```yaml
 [dependencies]
-cherries = "0.2.2"
+cherries = "0.2.3"
 ```
 
 ### Labeling
@@ -161,7 +161,7 @@ fn main() {
         .name("x")
         .value(Length::new::<meter>(2.1))
         .build();
-    let res = x.map(|x| x.floor::<meter>()).label("floor");
+    let res = x.map(|x| x.floor::<meter>()).labeled("floor");
     assert_eq!(&Length::new::<meter>(2.0), res.quantity());
     assert_eq!(&"floor".to_string(), res.name());
     println!("{}", res.to_json());
