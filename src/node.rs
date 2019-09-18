@@ -269,6 +269,59 @@ impl<T: Clone + Debug> Cherry<T> {
             .prev(self.to_json().to_owned())
             .build()
     }
+    ///
+    /// Returns `Ok(&self)` if `predicate(self.quantity())` is true, otherwise returns `Err(&self)`.
+    ///
+    /// # Examples
+    /// ```
+    /// extern crate cherries;
+    /// use cherries::node::{Leaf, Cherries};
+    /// extern crate uom;
+    /// use uom::si::{f32::*, length::meter};
+    ///
+    /// fn main() {
+    ///     let x = Leaf::new()
+    ///         .name("x")
+    ///         .value(Length::new::<meter>(2.1))
+    ///         .build();
+    ///     let res = x.is_satisfy_with(|x| x < &Length::new::<meter>(2.0));
+    ///     assert_eq!(Err(&x), res);
+    /// }
+    ///
+    /// ```
+    pub fn is_satisfy_with<Predicate: FnOnce(&T) -> bool>(
+        &self,
+        predicate: Predicate,
+    ) -> std::result::Result<&Self, &Self> {
+        if predicate(&self.value) {
+            Ok(self)
+        } else {
+            Err(self)
+        }
+    }
+    ///
+    /// Applies `self.quantity()` to given function `f` and returns its result.
+    ///
+    /// # Examples
+    /// ```
+    /// extern crate cherries;
+    /// use cherries::node::{Leaf, Cherries};
+    /// extern crate uom;
+    /// use uom::si::{f32::*, length::meter};
+    ///
+    /// fn main() {
+    ///     let x = Leaf::new()
+    ///         .name("x")
+    ///         .value(Length::new::<meter>(2.1))
+    ///         .build();
+    ///     let res = x.with(|x| x < &Length::new::<meter>(2.0));
+    ///     assert_eq!(res, false);
+    /// }
+    ///
+    /// ```
+    pub fn with<U, F: FnOnce(&T) -> U>(&self, f: F) -> U {
+        f(&self.value)
+    }
 }
 
 #[derive(Debug, Default)]
