@@ -12,7 +12,7 @@ Cherries is a crate that does expression logging as json structure.
 
 ```yaml
 [dependencies]
-cherries = "0.2.3"
+cherries = "0.2.4"
 ```
 
 ### Labeling
