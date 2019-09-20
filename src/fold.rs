@@ -131,7 +131,10 @@ where
 #[macro_export]
 macro_rules! prod_all {
     ( $head:expr, $( $tail:expr ),* ) => {
-        ($crate::fold::FoldProxy { value: ($head).quantity().clone(), items: vec![Box::new($head)] }$( * $tail)*).into_expr()
+        {
+            let head = $head;
+            ($crate::fold::FoldProxy { value: head.quantity().clone(), items: vec![Box::new(head)] }$( * $tail)*).into_expr()
+        }
     };
 }
 
@@ -158,7 +161,10 @@ macro_rules! prod_all {
 #[macro_export]
 macro_rules! sum_all {
     ( $head:expr, $( $tail:expr ),* ) => {
-        ($crate::fold::FoldProxy { value: ($head).quantity().clone(), items: vec![Box::new($head)] }$( + $tail)*).into_expr()
+        {
+            let head = $head;
+            ($crate::fold::FoldProxy { value: head.quantity().clone(), items: vec![Box::new(head)] }$( + $tail)*).into_expr()
+        }
     };
 }
 
@@ -185,7 +191,10 @@ macro_rules! sum_all {
 #[macro_export]
 macro_rules! minimum {
     ( $head:expr, $( $tail:expr ),* ) => {
-        ($crate::fold::FoldProxy { value: ($head).quantity().clone(), items: vec![Box::new($head)] }$(.min($tail))*).into_expr()
+        {
+            let head = $head;
+            ($crate::fold::FoldProxy { value: head.quantity().clone(), items: vec![Box::new(head)] }$(.min($tail))*).into_expr()
+        }
     };
 }
 
@@ -201,18 +210,22 @@ macro_rules! minimum {
 /// # #[macro_use] extern crate cherries;
 /// # use cherries::node::{Cherries, Leaf};
 /// # use cherries::maximum;
+/// # fn id<T>(x: T) -> T { x }
 /// # fn main() {
 ///     let a = Leaf::new().value(2).name("a").build();
 ///     let b = Leaf::new().value(3).name("b").build();
 ///     let c = Leaf::new().value(4).name("c").build();
 ///     let d = Leaf::new().value(1).name("d").build();
-///     let res = maximum!(a, b, c, d);
+///     let res = maximum!(id(a), b, c, d);
 ///     assert_eq!(&4, res.quantity());
 /// # }
 /// ```
 #[macro_export]
 macro_rules! maximum {
     ( $head:expr, $( $tail:expr ),* ) => {
-        ($crate::fold::FoldProxy { value: ($head).quantity().clone(), items: vec![Box::new($head)] }$(.max($tail))*).into_expr()
+        {
+            let head = $head;
+            ($crate::fold::FoldProxy { value: head.quantity().clone(), items: vec![Box::new(head)] }$(.max($tail))*).into_expr()
+        }
     };
 }
