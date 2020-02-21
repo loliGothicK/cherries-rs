@@ -1,4 +1,6 @@
 extern crate uom;
+extern crate serde;
+use serde::{Serialize, Deserialize};
 
 pub mod cmp;
 pub mod node;
@@ -116,5 +118,28 @@ mod fold_tests {
         let res = maximum!(a, b, c, d);
         assert_eq!(&Length::new::<meter>(4), res.quantity());
         println!("{}", res.to_json());
+    }
+}
+
+#[cfg(test)]
+mod serialize_tests {
+    extern crate serde_json;
+    use uom::si::i32::*;
+    use uom::si::length::meter;
+    #[test]
+    fn it_works() {
+        use crate::node::{Cherry, Leaf};
+        let node = Leaf::new().value(2).name("node").build();
+        // Convert the Point to a JSON string.
+        let serialized = serde_json::to_string(&node).unwrap();
+
+        // Prints serialized = {"x":1,"y":2}
+        println!("serialized = {}", serialized);
+
+        // Convert the JSON string back to a Point.
+        let deserialized: Cherry<i32> = serde_json::from_str(&serialized).unwrap();
+
+        // Prints deserialized = Point { x: 1, y: 2 }
+        println!("deserialized = {:?}", deserialized);
     }
 }

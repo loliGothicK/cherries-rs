@@ -1,5 +1,8 @@
 extern crate uom;
-
+extern crate serde;
+use std::fmt;
+use serde::ser::{Serialize, Serializer, SerializeStruct};
+use serde::de::{self, Deserialize, Deserializer, Visitor, SeqAccess, MapAccess, DeserializeOwned};
 use regex::Regex;
 use std::fmt::Debug;
 
@@ -28,6 +31,128 @@ impl<T: Clone + Debug + PartialEq> PartialEq for Cherry<T> {
         (self.label == other.label)
             && (self.value == other.value)
             && (self.previous == other.previous)
+    }
+}
+
+impl<T: Clone + Debug + Serialize> Serialize for Cherry<T> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer
+    {
+        let mut state = serializer.serialize_struct("Cherry", 3)?;
+        state.serialize_field("label", &self.label)?;
+        state.serialize_field("value", &self.value)?;
+        state.serialize_field("previous", &self.previous)?;
+        state.end()
+    }
+}
+
+#[derive(Clone, Debug)]
+struct CherryVisitor<T: Clone + Debug> {
+    value_type: std::marker::PhantomData<T>,
+}
+
+impl<'de, T: Clone + Debug + Deserialize<'de>> CherryVisitor<T> {
+    fn new() -> Self {
+        CherryVisitor { value_type: std::marker::PhantomData }
+    }
+}
+
+impl<'de, T: Clone + Debug + Deserialize<'de>> serde::de::Visitor<'de> for CherryVisitor<T> {
+    type Value = Cherry<T>;
+
+    fn expecting(&self, _: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+        unimplemented!()
+    }
+
+    fn visit_seq<V>(self, mut seq: V) -> Result<Cherry<T>, V::Error>
+    where
+        V: SeqAccess<'de>,
+    {
+        let label = seq.next_element()?
+            .ok_or_else(|| de::Error::invalid_length(0, &self))?;
+        let value = seq.next_element()?
+            .ok_or_else(|| de::Error::invalid_length(1, &self))?;
+        let previous = seq.next_element()?
+            .ok_or_else(|| de::Error::invalid_length(2, &self))?;
+        Ok(Cherry{label, value, previous})
+    }
+
+    fn visit_map<V>(self, mut map: V) -> Result<Cherry<T>, V::Error>
+    where
+        V: MapAccess<'de>,
+    {
+        enum Field { Label, Value, Previous };
+        impl<'de> Deserialize<'de> for Field {
+            fn deserialize<D>(deserializer: D) -> Result<Field, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                struct FieldVisitor;
+
+                impl<'de> Visitor<'de> for FieldVisitor {
+                    type Value = Field;
+
+                    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                        formatter.write_str("`label`, `value`, or `previous`")
+                    }
+
+                    fn visit_str<E>(self, value: &str) -> Result<Field, E>
+                    where
+                        E: de::Error,
+                    {
+                        match value {
+                            "label" => Ok(Field::Label),
+                            "value" => Ok(Field::Value),
+                            "previous" => Ok(Field::Previous),
+                            _ => Err(de::Error::unknown_field(value, &["label", "value", "previous"])),
+                        }
+                    }
+                }
+
+                deserializer.deserialize_identifier(FieldVisitor)
+            }
+        }
+        let mut label = None;
+        let mut value = None;
+        let mut previous = None;
+        while let Some(key) = map.next_key()? {
+            match key {
+                Field::Label => {
+                    if label.is_some() {
+                        return Err(de::Error::duplicate_field("label"));
+                    }
+                    label = Some(map.next_value()?);
+                }
+                Field::Value => {
+                    if value.is_some() {
+                        return Err(de::Error::duplicate_field("value"));
+                    }
+                    value = Some(map.next_value()?);
+                }
+                Field::Previous => {
+                    if previous.is_some() {
+                        return Err(de::Error::duplicate_field("previous"));
+                    }
+                    previous = Some(map.next_value()?);
+                }
+            }
+        }
+        let label = label.ok_or_else(|| de::Error::missing_field("label"))?;
+        let value = value.ok_or_else(|| de::Error::missing_field("value"))?;
+        let previous = previous.ok_or_else(|| de::Error::missing_field("previous"))?;
+        Ok(Cherry{label, value, previous})
+    }
+}
+
+impl<'de, T: Clone + Debug + Deserialize<'de>> Deserialize<'de> for Cherry<T> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        const FIELDS: &'static [&'static str] = &["label", "value", "previous"];
+        let visitor: CherryVisitor<T> = CherryVisitor::new();
+        deserializer.deserialize_struct("Duration", FIELDS, visitor)
     }
 }
 
