@@ -12,7 +12,7 @@ Cherries is a crate that does expression logging as json structure.
 
 ```yaml
 [dependencies]
-cherries = "0.2.5"
+cherries = "0.3.1"
 ```
 
 ### Labeling
@@ -184,6 +184,11 @@ Output:
    ]
 }
 ```
+
+### Serialize/Deserialize (v3.0.0~)
+
+`Cherry<T> where T: serde::Serialize + ...`/`Cherry<T> where T: serde::Deserialize + ...`
+are implemented `serde::Serialize` and `serde::Deserialize`.
 
 ## License
 

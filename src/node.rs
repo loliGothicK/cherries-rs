@@ -2,7 +2,7 @@ extern crate uom;
 extern crate serde;
 use std::fmt;
 use serde::ser::{Serialize, Serializer, SerializeStruct};
-use serde::de::{self, Deserialize, Deserializer, Visitor, SeqAccess, MapAccess, DeserializeOwned};
+use serde::de::{self, Deserialize, Deserializer, Visitor, SeqAccess, MapAccess};
 use regex::Regex;
 use std::fmt::Debug;
 
@@ -150,7 +150,7 @@ impl<'de, T: Clone + Debug + Deserialize<'de>> Deserialize<'de> for Cherry<T> {
     where
         D: Deserializer<'de>,
     {
-        const FIELDS: &'static [&'static str] = &["label", "value", "previous"];
+        const FIELDS: &[&str] = &["label", "value", "previous"];
         let visitor: CherryVisitor<T> = CherryVisitor::new();
         deserializer.deserialize_struct("Duration", FIELDS, visitor)
     }
@@ -165,11 +165,8 @@ impl<T: Clone + Debug> Cherries for Cherry<T> {
     /// extern crate cherries;
     /// use cherries::node::{Leaf, Cherries};
     ///
-    /// fn main() {
-    ///     let node = Leaf::new().value(1).name("node").build();
-    ///     assert_eq!(node.name(), &"node".to_string());
-    /// }
-    ///
+    /// let node = Leaf::new().value(1).name("node").build();
+    /// assert_eq!(node.name(), &"node".to_string());
     /// ```
     fn name(&self) -> &String {
         self.name()
@@ -187,17 +184,14 @@ impl<T: Clone + Debug> Cherries for Cherry<T> {
     /// extern crate uom;
     /// use uom::si::{f32::*, length::meter};
     ///
-    /// fn main() {
-    ///     let node = Leaf::new().value(1).name("node").build();
-    ///     assert_eq!(node.value(), Ok(1.0));
-    ///     let node = Leaf::new().value(Length::new::<meter>(2.0)).name("node").build();
-    ///     assert_eq!(node.value(), Ok(2.0));
-    /// }
-    ///
+    /// let node = Leaf::new().value(1).name("node").build();
+    /// assert_eq!(node.value(), Ok(1.0));
+    /// let node = Leaf::new().value(Length::new::<meter>(2.0)).name("node").build();
+    /// assert_eq!(node.value(), Ok(2.0));
     /// ```
     fn value(&self) -> std::result::Result<f32, String> {
         let re = Regex::new(r#"^(.*?) .*$"#).unwrap();
-        let formats = format!("{:?}", self.quantity()).to_owned();
+        let formats = format!("{:?}", self.quantity());
         match formats.parse::<f32>() {
             Ok(value) => Ok(value),
             Err(_) => re.captures_iter(formats.clone().as_str()).last().map_or(
@@ -222,18 +216,15 @@ impl<T: Clone + Debug> Cherries for Cherry<T> {
     /// extern crate uom;
     /// use uom::si::{f32::*, length::meter};
     ///
-    /// fn main() {
-    ///     let node = Leaf::new().value(1).name("node").build();
-    ///     assert_eq!(node.symbol(), "dimensionless".to_string());
-    ///     let node = Leaf::new().value(Length::new::<meter>(2.0)).name("node").build();
-    ///     assert_eq!(node.symbol(), "m^1".to_string());
-    /// }
-    ///
+    /// let node = Leaf::new().value(1).name("node").build();
+    /// assert_eq!(node.symbol(), "dimensionless".to_string());
+    /// let node = Leaf::new().value(Length::new::<meter>(2.0)).name("node").build();
+    /// assert_eq!(node.symbol(), "m^1".to_string());
     /// ```
     fn symbol(&self) -> String {
         let re = Regex::new(r#".*? (.*)"#).unwrap();
-        let formats = format!("{:?}", self.quantity()).to_owned();
-        re.captures_iter(formats.clone().as_str())
+        let formats = format!("{:?}", self.quantity());
+        re.captures_iter(formats.as_str())
             .last()
             .map(|x| {
                 x.get(1)
@@ -254,32 +245,29 @@ impl<T: Clone + Debug> Cherries for Cherry<T> {
     /// extern crate uom;
     /// use uom::si::{f32::*, length::meter};
     ///
-    /// fn main() {
-    ///     let x = Leaf::new().value(1.0).name("x").build();
-    ///     let y = Leaf::new().value(Length::new::<meter>(2.0)).name("y").build();
-    ///     let res = x * y;
-    ///     assert_eq!(
-    ///         res.to_json(),
-    ///         "{\
-    ///             \"label\":\"(mul)\",\
-    ///             \"value\":2,\
-    ///             \"unit\":\"m^1\",\
-    ///             \"subexpr\":[\
-    ///                 {\
-    ///                     \"label\":\"x\",\
-    ///                     \"value\":1,\
-    ///                     \"unit\":\"dimensionless\"\
-    ///                 },\
-    ///                 {\
-    ///                     \"label\":\"y\",\
-    ///                     \"value\":2,\
-    ///                     \"unit\":\"m^1\"\
-    ///                 }\
-    ///             ]\
-    ///         }".to_string()
-    ///     );
-    /// }
-    ///
+    /// let x = Leaf::new().value(1.0).name("x").build();
+    /// let y = Leaf::new().value(Length::new::<meter>(2.0)).name("y").build();
+    /// let res = x * y;
+    /// assert_eq!(
+    ///     res.to_json(),
+    ///     "{\
+    ///         \"label\":\"(mul)\",\
+    ///         \"value\":2,\
+    ///         \"unit\":\"m^1\",\
+    ///         \"subexpr\":[\
+    ///             {\
+    ///                 \"label\":\"x\",\
+    ///                 \"value\":1,\
+    ///                 \"unit\":\"dimensionless\"\
+    ///             },\
+    ///             {\
+    ///                 \"label\":\"y\",\
+    ///                 \"value\":2,\
+    ///                 \"unit\":\"m^1\"\
+    ///             }\
+    ///         ]\
+    ///     }".to_string()
+    /// );
     /// ```
     fn to_json(&self) -> String {
         match &self.previous {
@@ -316,12 +304,10 @@ impl<T: Clone + Debug> Cherry<T> {
     /// extern crate uom;
     /// use uom::si::{f32::*, length::meter};
     ///
-    /// fn main() {
-    ///     let node = Leaf::new().value(1).name("node").build();
-    ///     assert_eq!(node.quantity(), &1);
-    ///     let node = Leaf::new().value(Length::new::<meter>(2.0)).name("y").build();
-    ///     assert_eq!(node.quantity(), &Length::new::<meter>(2.0));
-    /// }
+    /// let node = Leaf::new().value(1).name("node").build();
+    /// assert_eq!(node.quantity(), &1);
+    /// let node = Leaf::new().value(Length::new::<meter>(2.0)).name("y").build();
+    /// assert_eq!(node.quantity(), &Length::new::<meter>(2.0));
     ///
     /// ```
     pub fn quantity(&self) -> &T {
@@ -335,11 +321,8 @@ impl<T: Clone + Debug> Cherry<T> {
     /// extern crate cherries;
     /// use cherries::node::{Leaf, Cherries};
     ///
-    /// fn main() {
-    ///     let node = Leaf::new().value(1).name("node").build();
-    ///     assert_eq!(node.name(), &"node".to_string());
-    /// }
-    ///
+    /// let node = Leaf::new().value(1).name("node").build();
+    /// assert_eq!(node.name(), &"node".to_string());
     /// ```
     pub fn name(&self) -> &String {
         &self.label
@@ -352,13 +335,10 @@ impl<T: Clone + Debug> Cherry<T> {
     /// extern crate cherries;
     /// use cherries::node::{Leaf, Cherries};
     ///
-    /// fn main() {
-    ///     let node = Leaf::new().value(1).name("node").build();
-    ///     assert_eq!(node.name(), &"node".to_string());
-    ///     let node = node.labeled("renamed");
-    ///     assert_eq!(node.name(), &"renamed".to_string());
-    /// }
-    ///
+    /// let node = Leaf::new().value(1).name("node").build();
+    /// assert_eq!(node.name(), &"node".to_string());
+    /// let node = node.labeled("renamed");
+    /// assert_eq!(node.name(), &"renamed".to_string());
     /// ```
     pub fn labeled<S: Into<String>>(self, name: S) -> Cherry<T> {
         Cherry {
@@ -377,21 +357,18 @@ impl<T: Clone + Debug> Cherry<T> {
     /// extern crate uom;
     /// use uom::si::{f32::*, length::meter};
     ///
-    /// fn main() {
-    ///     let x = Leaf::new()
-    ///         .name("x")
-    ///         .value(Length::new::<meter>(2.1))
-    ///         .build();
-    ///     let res = x.map(|x| x.floor::<meter>()).labeled("floor");
-    ///     assert_eq!(&Length::new::<meter>(2.0), res.quantity());
-    /// }
-    ///
+    /// let x = Leaf::new()
+    ///     .name("x")
+    ///     .value(Length::new::<meter>(2.1))
+    ///     .build();
+    /// let res = x.map(|x| x.floor::<meter>()).labeled("floor");
+    /// assert_eq!(&Length::new::<meter>(2.0), res.quantity());
     /// ```
     pub fn map<F: FnOnce(&T) -> U, U: Clone + Debug>(&self, f: F) -> Cherry<U> {
         Node::new()
             .name("(map)")
-            .value(f(self.quantity()).to_owned())
-            .prev(self.to_json().to_owned())
+            .value(f(self.quantity()))
+            .prev(self.to_json())
             .build()
     }
     ///
@@ -404,15 +381,12 @@ impl<T: Clone + Debug> Cherry<T> {
     /// extern crate uom;
     /// use uom::si::{f32::*, length::meter};
     ///
-    /// fn main() {
-    ///     let x = Leaf::new()
-    ///         .name("x")
-    ///         .value(Length::new::<meter>(2.1))
-    ///         .build();
-    ///     let res = x.is_satisfy_with(|x| x < &Length::new::<meter>(2.0));
-    ///     assert_eq!(Err(&x), res);
-    /// }
-    ///
+    /// let x = Leaf::new()
+    ///     .name("x")
+    ///     .value(Length::new::<meter>(2.1))
+    ///     .build();
+    /// let res = x.is_satisfy_with(|x| x < &Length::new::<meter>(2.0));
+    /// assert_eq!(Err(&x), res);
     /// ```
     pub fn is_satisfy_with<Predicate: FnOnce(&T) -> bool>(
         &self,
@@ -434,14 +408,12 @@ impl<T: Clone + Debug> Cherry<T> {
     /// extern crate uom;
     /// use uom::si::{f32::*, length::meter};
     ///
-    /// fn main() {
-    ///     let x = Leaf::new()
-    ///         .name("x")
-    ///         .value(Length::new::<meter>(2.1))
-    ///         .build();
-    ///     let res = x.with(|x| x < &Length::new::<meter>(2.0));
-    ///     assert_eq!(res, false);
-    /// }
+    /// let x = Leaf::new()
+    ///     .name("x")
+    ///     .value(Length::new::<meter>(2.1))
+    ///     .build();
+    /// let res = x.with(|x| x < &Length::new::<meter>(2.0));
+    /// assert_eq!(res, false);
     ///
     /// ```
     pub fn with<U, F: FnOnce(&T) -> U>(&self, f: F) -> U {
@@ -479,15 +451,12 @@ impl<T: Clone + Debug> Leaf<String, T> {
     /// extern crate cherries;
     /// use cherries::node::{Leaf, Cherries};
     ///
-    /// fn main() {
-    ///     let x = Leaf::new()
-    ///         .name("x")
-    ///         .value(2)
-    ///         .build();
-    ///     assert_eq!(x.quantity(), &2);
-    ///     assert_eq!(x.name(), &"x".to_string());
-    /// }
-    ///
+    /// let x = Leaf::new()
+    ///     .name("x")
+    ///     .value(2)
+    ///     .build();
+    /// assert_eq!(x.quantity(), &2);
+    /// assert_eq!(x.name(), &"x".to_string());
     /// ```
     pub fn build(self) -> Cherry<T> {
         Cherry {

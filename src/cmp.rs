@@ -17,18 +17,17 @@ use std::fmt::Debug;
 /// use uom::si::f32::*;
 /// use uom::si::length::meter;
 /// use std::cmp::Ordering;
-/// fn main() {
-///    let x = Leaf::new().value(Length::new::<meter>(2.0)).name("x").build();
-///    let y = Leaf::new().value(Length::new::<meter>(2.1)).name("y").build();
-///    assert_eq!(x.partial_cmp(&y), Some(Ordering::Less));
-///    assert_eq!(y.partial_cmp(&x), Some(Ordering::Greater));
-///    assert_eq!(x.partial_cmp(&x), Some(Ordering::Equal));
-///    assert_eq!(x < y, true);
-///    assert_eq!(y < x, false);
-///    assert_eq!(x > y, false);
-///    assert_eq!(y > x, true);
-///    assert_eq!(x == x, true);
-/// }
+///
+/// let x = Leaf::new().value(Length::new::<meter>(2.0)).name("x").build();
+/// let y = Leaf::new().value(Length::new::<meter>(2.1)).name("y").build();
+/// assert_eq!(x.partial_cmp(&y), Some(Ordering::Less));
+/// assert_eq!(y.partial_cmp(&x), Some(Ordering::Greater));
+/// assert_eq!(x.partial_cmp(&x), Some(Ordering::Equal));
+/// assert_eq!(x < y, true);
+/// assert_eq!(y < x, false);
+/// assert_eq!(x > y, false);
+/// assert_eq!(y > x, true);
+/// assert_eq!(x == x, true);
 /// ```
 impl<T> PartialOrd for Cherry<T>
 where
