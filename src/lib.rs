@@ -1,6 +1,50 @@
+//! # Cherries
+//!
+//! Cherries is a framework for logging operation history as json structure automatically.
+//!
+//! ## Design
+//!
+//! The Cherries Library provides `Cherry<T>` a operational expression node.
+//! `Cherry<T>` provides impl for basic `ops` traits and some useful functors (i.g. `map`, `with`).
+//! `Cherry<T>` logging every operation automatically in its field `previous` as JSON string.
+//! 
+//! ```
+//! extern crate cherries;
+//! use cherries::node::{Leaf, Cherries};
+//! 
+//! // Creating leaf nodes.
+//! let a = Leaf::new().value(1).name("a").build();
+//! let b = Leaf::new().value(1).name("b").build();
+//! 
+//! // `c` holds log data automatically.
+//! let c = a + b;
+//! let c = c.labeled("c");
+//!  // We can get expression log to call `to_json` method.
+//! println!("{}", c.to_json());
+//! //  {
+//! //      "label":"c",
+//! //      "value":2,
+//! //      "unit":"dimensionless",
+//! //      "subexpr":[
+//! //          {
+//! //              "label":"a",
+//! //              "value":1,
+//! //              "unit":"dimensionless"
+//! //          },
+//! //          {
+//! //              "label":"b",
+//! //              "value":1,
+//! //              "unit":"dimensionless"
+//! //          }
+//! //      ]
+//! //  }
+//! ```
+//!
+
+////////////////////////////////////////////////////////////////////////////////
+
 extern crate uom;
 extern crate serde;
-use serde::{Serialize, Deserialize};
 
 pub mod cmp;
 pub mod node;
@@ -94,8 +138,8 @@ mod label_tests {
 }
 #[cfg(test)]
 mod validate_tests {
-    use crate::node::{Cherries, Cherry, Leaf};
-    use crate::validate::{Error, Validate, ValidateChain};
+    use crate::node::{Leaf};
+    use crate::validate::{Validate};
     #[test]
     fn it_works() {
         let node = Leaf::new().value(2).name("node").build();
@@ -124,8 +168,6 @@ mod fold_tests {
 #[cfg(test)]
 mod serialize_tests {
     extern crate serde_json;
-    use uom::si::i32::*;
-    use uom::si::length::meter;
     #[test]
     fn it_works() {
         use crate::node::{Cherry, Leaf};

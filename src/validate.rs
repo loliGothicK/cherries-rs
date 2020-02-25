@@ -48,36 +48,34 @@ impl<T: Clone + Debug> ValidateChain<T> {
     /// extern crate uom;
     /// use uom::si::{f32::*, length::meter, area::square_meter};
     ///
-    /// fn main() {
-    ///    let x = Leaf::new()
-    ///        .name("x")
-    ///        .value(Length::new::<meter>(2.0))
-    ///        .build();
-    ///    let y = Leaf::new()
-    ///        .name("y")
-    ///        .value(Length::new::<meter>(1.0))
-    ///        .build();
-    ///    let res = x * y;
-    ///    let validated = res
-    ///        .validate("must be less than 1.0!!", |quantity| {
-    ///            quantity < &Area::new::<square_meter>(1.0)
-    ///        })
-    ///        .validate("must be less than 0.0!!", |quantity| {
-    ///            quantity < &Area::new::<square_meter>(0.0)
-    ///        })
-    ///        .into_result();
-    ///    assert_eq!(
-    ///        Err(Error {
-    ///            label: "(mul)".to_string(),
-    ///            msg: vec![
-    ///                 "must be less than 1.0!!".to_string(),
-    ///                 "must be less than 0.0!!".to_string()
-    ///            ],
-    ///            tree: "json tree".to_string(),
-    ///        }),
-    ///        validated
-    ///    );
-    /// }
+    /// let x = Leaf::new()
+    ///     .name("x")
+    ///     .value(Length::new::<meter>(2.0))
+    ///     .build();
+    /// let y = Leaf::new()
+    ///     .name("y")
+    ///     .value(Length::new::<meter>(1.0))
+    ///     .build();
+    /// let res = x * y;
+    /// let validated = res
+    ///     .validate("must be less than 1.0!!", |quantity| {
+    ///         quantity < &Area::new::<square_meter>(1.0)
+    ///     })
+    ///     .validate("must be less than 0.0!!", |quantity| {
+    ///         quantity < &Area::new::<square_meter>(0.0)
+    ///     })
+    ///     .into_result();
+    /// assert_eq!(
+    ///     Err(Error {
+    ///         label: "(mul)".to_string(),
+    ///         msg: vec![
+    ///              "must be less than 1.0!!".to_string(),
+    ///              "must be less than 0.0!!".to_string()
+    ///         ],
+    ///         tree: "json tree".to_string(),
+    ///     }),
+    ///     validated
+    /// );
     /// ```
     pub fn into_result(self) -> Result<T> {
         if self.errors.borrow().is_empty() {
@@ -123,30 +121,28 @@ pub trait Validate<T: Clone + Debug> {
 /// extern crate uom;
 /// use uom::si::{f32::*, length::meter, area::square_meter};
 ///
-/// fn main() {
-///    let x = Leaf::new()
-///        .name("x")
-///        .value(Length::new::<meter>(2.0))
-///        .build();
-///    let y = Leaf::new()
-///        .name("y")
-///        .value(Length::new::<meter>(1.0))
-///        .build();
-///    let res = x * y;
-///    let validated = res
-///        .validate("must be less than 1.0!!", |quantity| {
-///            quantity < &Area::new::<square_meter>(1.0)
-///        })
-///        .into_result();
-///    assert_eq!(
-///        Err(Error {
-///            label: "(mul)".to_string(),
-///            msg: vec!["must be less than 1.0!!".to_string()],
-///            tree: "json tree".to_string(),
-///        }),
-///        validated
-///    );
-/// }
+/// let x = Leaf::new()
+///     .name("x")
+///     .value(Length::new::<meter>(2.0))
+///     .build();
+/// let y = Leaf::new()
+///     .name("y")
+///     .value(Length::new::<meter>(1.0))
+///     .build();
+/// let res = x * y;
+/// let validated = res
+///     .validate("must be less than 1.0!!", |quantity| {
+///         quantity < &Area::new::<square_meter>(1.0)
+///     })
+///     .into_result();
+/// assert_eq!(
+///     Err(Error {
+///         label: "(mul)".to_string(),
+///         msg: vec!["must be less than 1.0!!".to_string()],
+///         tree: "json tree".to_string(),
+///     }),
+///     validated
+/// );
 /// ```
 impl<T: Clone + Debug> Validate<T> for Cherry<T> {
     fn validate<IntoString, Predicate>(
@@ -160,12 +156,12 @@ impl<T: Clone + Debug> Validate<T> for Cherry<T> {
     {
         if predicate(&self.quantity()) {
             ValidateChain {
-                cherry: self.to_owned(),
+                cherry: self,
                 errors: RefCell::new(vec![]),
             }
         } else {
             ValidateChain {
-                cherry: self.to_owned(),
+                cherry: self,
                 errors: RefCell::new(vec![msg.into()]),
             }
         }
@@ -185,37 +181,35 @@ impl<T: Clone + Debug> Validate<T> for Cherry<T> {
 /// extern crate uom;
 /// use uom::si::{f32::*, length::meter, area::square_meter};
 ///
-/// fn main() {
-///    let x = Leaf::new()
-///        .name("x")
-///        .value(Length::new::<meter>(2.0))
-///        .build();
-///    let y = Leaf::new()
-///        .name("y")
-///        .value(Length::new::<meter>(1.0))
-///        .build();
-///    let res = x * y;
-///    let validated = res
-///        .validate("must be less than 1.0!!", |quantity| {
-///            quantity < &Area::new::<square_meter>(1.0)
-///        })
-///        .validate("must be less than 0.0!!", |quantity| {
-///            quantity < &Area::new::<square_meter>(0.0)
-///        })
-///        .into_result();
-///    assert_eq!(
-///        Err(Error {
-///            label: "(mul)".to_string(),
-///            msg: vec![
-///                 "must be less than 1.0!!".to_string(),
-///                 "must be less than 0.0!!".to_string()
-///            ],
-///            tree: "json tree".to_string(),
-///        }),
-///        validated
-///    );
-/// }
-/// ```
+/// let x = Leaf::new()
+///     .name("x")
+///     .value(Length::new::<meter>(2.0))
+///     .build();
+/// let y = Leaf::new()
+///     .name("y")
+///     .value(Length::new::<meter>(1.0))
+///     .build();
+/// let res = x * y;
+/// let validated = res
+///     .validate("must be less than 1.0!!", |quantity| {
+///         quantity < &Area::new::<square_meter>(1.0)
+///     })
+///     .validate("must be less than 0.0!!", |quantity| {
+///         quantity < &Area::new::<square_meter>(0.0)
+///     })
+///     .into_result();
+/// assert_eq!(
+///     Err(Error {
+///         label: "(mul)".to_string(),
+///         msg: vec![
+///              "must be less than 1.0!!".to_string(),
+///              "must be less than 0.0!!".to_string()
+///         ],
+///         tree: "json tree".to_string(),
+///     }),
+///     validated
+/// );
+/// 
 impl<T: Clone + Debug> Validate<T> for ValidateChain<T> {
     fn validate<IntoString, Predicate>(
         self,

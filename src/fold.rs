@@ -22,7 +22,6 @@ impl<T: Clone + Debug> FoldProxy<T> {
                     .map(|x| x.to_json())
                     .collect::<Vec<_>>()
                     .join(",")
-                    .to_owned(),
             )
             .build()
     }
